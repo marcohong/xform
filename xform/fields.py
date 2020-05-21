@@ -155,7 +155,8 @@ class Field(FieldABC):
         self.reset()
         self.locale = request.locale.translate if request else None
         self.value = value
-        if self.lst and isinstance(value, (list, tuple)):
+        if self.lst:
+            value = value if isinstance(value, (list, tuple)) else [value]
             not_null = False if not value else all([0 if x in (None, '')
                                                     else 1 for x in value])
             if not self._valid_required(value if not_null else ''):
@@ -376,7 +377,7 @@ class Raw(Field):
 
 
 class Nested(Field):
-    err_msg = {'type': 'Invalid type'}
+    err_msg = {'type': ErrMsg.get_message('invalid_type')}
 
     def __init__(self,
                  nested: Any,
@@ -403,7 +404,7 @@ class Nested(Field):
                             request: httputil.HTTPServerRequest
                             ) -> "Field":
         self.reset()
-        self.locale = request.lang
+        self.locale = request.locale.translate
         self.value = value
         if not self._valid_required(value):
             return self
@@ -414,7 +415,7 @@ class Nested(Field):
             data = json_loads(value) if isinstance(value, str) else value
         except (ValueError, AssertionError):
             self.set_error('invalid')
-        datas, errors = await self.schema.dict_bind(request, data)
+        datas, errors = await self.schema.dict_bind(data, request)
         if errors:
             self.error = errors
         else:
@@ -424,6 +425,7 @@ class Nested(Field):
 
 class List(Field):
     err_msg = {
+        'invalid': ErrMsg.get_message('default_invalid'),
         'too_less_error': ErrMsg.get_message('too_less_error'),
         'too_long_error': ErrMsg.get_message('too_long_error')
     }
@@ -431,10 +433,12 @@ class List(Field):
     def __init__(self,
                  min_len: int = 1,
                  max_len: Union[None, int] = None,
+                 data_type: callable = None,
                  length: Union[int, tuple] = None,
                  **kwargs: Any):
         kwargs['lst'] = True
         kwargs['length'] = length
+        self._data_type = data_type
         self._min_len = min_len
         self._max_len = max_len or 0
         super().__init__(**kwargs)
@@ -443,19 +447,27 @@ class List(Field):
                         value: list,
                         attr: str,
                         data: dict) -> Optional[list]:
-        if isinstance(value, (int, float, bool)):
-            value = [value]
         if len(value) < self._min_len:
             self.set_error('too_less_error', None, self._min_len)
             return
         if self._max_len > 0 and len(value) > self._max_len:
             self.set_error('too_long_error', None, self._max_len)
             return
+        if self._data_type and callable(self._data_type):
+            try:
+                data = [self._data_type(i) for i in value]
+                if not all(data):
+                    raise ValueError
+            except ValueError:
+                self.set_error('invalid')
+                return
+            return data
 
 
 class IntList(List):
     def __init__(self, dedup: bool = True, **kwargs):
         self.dedup = dedup
+        kwargs['data_type'] = int
         super().__init__(**kwargs)
 
     def get_value(self):
@@ -751,7 +763,7 @@ class Username(Str):
         if isinstance(self.length, int):
             length = (self.length - 1, self.length - 1)
         else:
-            length = self.length
+            length = (self.length[0] - 1, self.length[1] - 1)
         ret = re.match(self._regex % length, value)
         if not ret:
             self.set_error('invalid')
