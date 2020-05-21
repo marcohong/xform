@@ -9,7 +9,7 @@ usage:
         sex = Field(validate=OneOf(('man', 'women')))
 
     user = UserForm()
-    datas, errors = await user.bind(tornado.request)
+    datas, errors = await user.bind(self.request)
     print(errors)
     print(datas)
 

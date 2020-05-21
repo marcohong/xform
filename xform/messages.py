@@ -12,6 +12,7 @@ _err_msgs = {
     'max_invalid': 'A maximum of %s',
     'too_less_error': 'Array length not less than %s',
     'too_long_error': 'Length of the array over %s',
+    'invalid_type': 'Invalid type',
     'invalid_bool': 'Not a valid boolean',
     'invalid_datetime': '%s cannot be formatted(e.g: %s)',
     'invalid_start_date': 'Invalid time format',
