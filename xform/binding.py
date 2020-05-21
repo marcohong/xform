@@ -7,7 +7,7 @@ See the RequestData class for more information.
 from typing import Optional, Union
 from tornado import httputil
 
-from .utils import AttrDict
+from .utils import AttrDict, JsonDecodeError, json_loads
 
 '''
 Content-Type:
@@ -61,7 +61,11 @@ class JsonContent(Content):
         '''
         :return: <dict> name:value
         '''
-        return self.req.get_request_body(loads=True)
+        try:
+            data = json_loads(self.req.request.body)
+        except (JsonDecodeError, ValueError):
+            data = None
+        return data
 
 
 class FormContent(Content):

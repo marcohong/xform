@@ -21,7 +21,7 @@ class UserForm(Form):
     uname = fields.Username(required=True, length=(4, 20))
     stime = fields.StartDate(required=True)
     etime = fields.EndedDate('stime', required=True)
-    roles = fields.IntList(required=False)
+    roles = fields.IntList(required=True)
 
 
 class TestForm:
