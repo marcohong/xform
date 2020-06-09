@@ -41,6 +41,7 @@ class MainHandler(tornado.web.RequestHandler):
     )
 
     async def post(self):
+        # locations: if used Schema, only support json data.
         data, error = await self.form.bind(self)
         if error:
             ret = dict(code=0, state='FAIL', errors=error)

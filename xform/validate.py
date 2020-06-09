@@ -1,4 +1,5 @@
 from typing import Union
+from .messages import ErrMsg
 
 
 class ValidationError(Exception):
@@ -22,7 +23,7 @@ class Validator:
 
 
 class OneOf(Validator):
-    default_message = 'Invalid option value'
+    default_message = ErrMsg.get_message('invalid_option')
 
     def __init__(self, choices: Union[list, tuple], error: str = None):
         self.choices = choices

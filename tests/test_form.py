@@ -1,19 +1,10 @@
-
-
-import os
-import sys
 import asyncio
-ROOT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-if ROOT_PATH not in sys.path:
-    sys.path.insert(0, ROOT_PATH)
 
-try:
-    from xform.messages import ErrMsg
-    ErrMsg.set_messages({'invalid_start_date': 'time invalid'})
-    from xform import fields
-    from xform.form import Form
-except ImportError:
-    pass
+# set_messages before import fields
+# from xform.messages import ErrMsg
+# ErrMsg.set_messages({'invalid_start_date': 'time invalid'})
+from xform.form import Form
+from xform import fields
 
 
 class UserForm(Form):

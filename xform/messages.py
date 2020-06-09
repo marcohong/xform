@@ -2,6 +2,12 @@ from typing import Any, Optional
 
 __all__ = ['ErrMsg']
 
+'''You can add the values in the dictionary to the translation file message.po
+
+e.g:
+    msgid "Length must be between %s and %s"
+    msgstr "Parameter error, length must be between %s and %s"
+'''
 _err_msgs = {
     'default_faild': 'Verification failed',
     'default_required': 'This field is required',
@@ -24,7 +30,8 @@ _err_msgs = {
     'invalid_username': 'The username string entered is invalid',
     'invalid_password': 'The password string entered is invalid',
     'invalid_ip': 'Invalid Ip Address',
-    'invalid_json': 'Json data format error'
+    'invalid_json': 'Json data format error',
+    'invalid_option': 'Invalid option value'
 }
 
 
