@@ -9,10 +9,10 @@ e.g:
     msgstr "Parameter error, length must be between %s and %s"
 '''
 _err_msgs = {
-    'default_faild': 'Verification failed',
+    'default_failed': 'Verification failed',
     'default_required': 'This field is required',
     'default_length': 'Length must be between %s and %s',
-    'default_length_qeual': 'Length must be equal to %s',
+    'default_length_equal': 'Length must be equal to %s',
     'default_invalid': 'Invalid character',
     'min_invalid': 'The minimum value is %s',
     'max_invalid': 'A maximum of %s',

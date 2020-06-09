@@ -123,7 +123,7 @@ class Field(FieldABC):
 
     def set_error(self,
                   key: str,
-                  default: str = ErrMsg.get_message('default_faild'),
+                  default: str = ErrMsg.get_message('default_failed'),
                   *args: Any) -> None:
         '''
         Set error message.
@@ -224,7 +224,7 @@ class Field(FieldABC):
                     return False
             elif isinstance(self.length, int):
                 if value is None or len(value) != self.length:
-                    _msg = ErrMsg.get_message('default_length_qeual')
+                    _msg = ErrMsg.get_message('default_length_equal')
                     self.set_error('length', _msg, self.length)
                     return False
             else:
@@ -253,7 +253,7 @@ class Field(FieldABC):
                 res = validate(value)
                 if not isinstance(validate, Validator) and res is False:
                     self.set_error(
-                        'invalid', ErrMsg.get_message('default_faild'))
+                        'invalid', ErrMsg.get_message('default_failed'))
             except ValidationError as verr:
                 self.value = None
                 if self.required is True:
