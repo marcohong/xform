@@ -2,6 +2,7 @@ import re
 import datetime
 import time
 import inspect
+import types
 from collections.abc import Iterable
 from typing import Any, Tuple, Union, Optional
 
@@ -192,7 +193,7 @@ class Field(FieldABC):
         if ret is not None:
             self.value = ret
         if not self.error and self.validators:
-            self._validator(value)
+            await self._validator(value)
         return self
 
     def _valid_required(self, value: VALUE_TYPES) -> bool:
@@ -242,7 +243,7 @@ class Field(FieldABC):
         '''
         pass
 
-    def _validator(self, value: VALUE_TYPES) -> None:
+    async def _validator(self, value: VALUE_TYPES) -> None:
         for validate in self.validators:
             try:
                 if self.cvt_type and value is not None:
@@ -250,8 +251,10 @@ class Field(FieldABC):
                         value = self.cvt_type(value)
                     except ValueError:
                         pass
-                res = validate(value)
-                if not isinstance(validate, Validator) and res is False:
+                ret = validate(value)
+                if isinstance(ret, types.CoroutineType):
+                    await ret
+                if not isinstance(validate, Validator) and ret is False:
                     self.set_error(
                         'invalid', ErrMsg.get_message('default_failed'))
             except ValidationError as verr:

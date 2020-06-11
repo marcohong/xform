@@ -74,6 +74,14 @@ class Form(FormABC, metaclass=FormMeta):
     def bind(self,
              request: httputil.HTTPServerRequest,
              locations: Union[tuple, str] = None) -> tuple:
+        '''Bind data from request.
+
+        Bind data and check the accuracy of data.
+
+        :param request: <httputil.HTTPServerRequest>
+        :param locations: <uple/str> form/json/query/headers/cookies
+        :return: <tuple> (data, error)
+        '''
         kwds = RequestData(request,
                            self.__fields__,
                            locations=locations).bind()
@@ -83,6 +91,12 @@ class Form(FormABC, metaclass=FormMeta):
                   data: dict,
                   request: httputil.HTTPServerRequest = None
                   ) -> tuple:
+        '''Check the accuracy of data.
+
+        :param data: <dict>
+        :param request: <httputil.HTTPServerRequest>
+        :return: <tuple> (data, error)
+        '''
         return self._bind(data, request)
 
 

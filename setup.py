@@ -10,7 +10,7 @@ setup(
     url='https://github.com/marcohong/xform',
     keywords=['tornado form xform'],
     packages=['xform'],
-    install_requires=['tornado>=5.0.0'],
+    install_requires=['tornado>6.0.0'],
     python_requires='>=3.6',
     classifiers=[
         'Development Status :: 4 - Beta',
