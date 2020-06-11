@@ -52,7 +52,7 @@ class MainHandler(tornado.web.RequestHandler):
         self.write(json.dumps(ret))
 ```
 
-自定义的提示
+自定义的提示(3种方式)
 
 ```python
 '''
@@ -147,7 +147,7 @@ class OrderNOField(Str):
 
 # user_id是表单提交的字段(data_key是可选的，如果为空则使用user作为表单字段)
 form = SubmitForm(
-  	user=UserField(data_key='user_id', required=True),
+    user=UserField(data_key='user_id', required=True),
     order_no=OrderNOField(required=True)
 )
 ```
@@ -155,6 +155,7 @@ form = SubmitForm(
 自定义的validator验证
 
 ```python
+from xform.fields import Str
 from xform.validate import Validator, ValidationError
 #参考OneOf
 class OneOf(Validator):
@@ -173,5 +174,9 @@ class OneOf(Validator):
             raise ValidationError(self.error)
         return value
 
+# 使用validate
+form = SubmitForm(
+    tag=Str(required=True, validate=OneOf(('bule', 'red', 'green')))
+)
 ```
 
