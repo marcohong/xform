@@ -15,13 +15,20 @@ usage:
 
 '''
 from typing import Any, Union
-from tornado import httputil
 
 from . import FormABC
 from .fields import Field
 from .binding import DataBinding
 
 __all__ = ['Form', 'SubmitForm']
+
+'''
+Web request object.
+e.g:
+    Tornado: tornado.web.RequestHandler
+'''
+# web request object
+REQUESTS = 'Request'
 
 
 class FormMeta(type):
@@ -72,13 +79,13 @@ class Form(FormABC, metaclass=FormMeta):
         return _datas, _errors
 
     def bind(self,
-             request: httputil.HTTPServerRequest,
+             request: REQUESTS,
              locations: Union[tuple, str] = None) -> tuple:
         '''Bind data from request.
 
         Bind data and check the accuracy of data.
 
-        :param request: <httputil.HTTPServerRequest>
+        :param request: e.g: tornado.web.RequestHandler
         :param locations: <uple/str> form/json/query/headers/cookies
         :return: <tuple> (data, error)
         '''
@@ -89,12 +96,12 @@ class Form(FormABC, metaclass=FormMeta):
 
     def dict_bind(self,
                   data: dict,
-                  request: httputil.HTTPServerRequest = None
+                  request: REQUESTS = None
                   ) -> tuple:
         '''Check the accuracy of data.
 
         :param data: <dict>
-        :param request: <httputil.HTTPServerRequest>
+        :param request: e.g: tornado.web.RequestHandler
         :return: <tuple> (data, error)
         '''
         translate: callable = None
@@ -133,7 +140,7 @@ class SubmitForm:
             raise AttributeError(f'SubmitForm object has not attribute {key}.')
 
     def bind(self,
-             request: httputil.HTTPServerRequest,
+             request: REQUESTS,
              locations: Union[str, tuple] = None) -> tuple:
         if not self.__form__:
             form = type('SubmitForm', (Form,), self.__fields__)
