@@ -1,5 +1,5 @@
 #### xform
-Tornado表单数据绑定验证框架
+表单数据绑定验证框架，默认支持Tornado，可扩展支持flask或其它的python web框架
 
 ------
 
@@ -94,7 +94,7 @@ python3 test_client.py
 
 #### 扩展
 
-自定义fields类型
+##### 自定义fields类型
 
 ```python
 import re
@@ -152,7 +152,7 @@ form = SubmitForm(
 )
 ```
 
-自定义的validator验证
+##### 自定义的validator验证
 
 ```python
 from xform.fields import Str
@@ -178,5 +178,36 @@ class OneOf(Validator):
 form = SubmitForm(
     tag=Str(required=True, validate=OneOf(('bule', 'red', 'green')))
 )
+```
+
+##### 其它web框架支持
+
+```python
+'''
+Tornado为例
+'''
+from xform.httputil import BaseRequest
+class TornadoRequest(BaseRequest):
+    def __init__(self, request):
+        super().__init__(request)
+
+    def get_argument(self,
+                     name: str,
+                     default: Any = None) -> Optional[str]:
+        return self.request.get_argument(name, default=default)
+
+    def get_from_header(self,
+                        name: str,
+                        default: Any = None) -> Optional[dict]:
+        return self.request.request.headers.get(name, default)
+
+    def translate(self, message: str) -> str:
+        return self.request.locale.translate(message)
+    # ...实现BaseRequest里面的方法，
+    # 详细实现请参考xform.httputil.TornadoRequest
+
+# 启动web服务前设置一下xform的request代理(不设置默认Tornado)，以Tornado为例
+from xform.httputil import TornadoRequest, HttpRequest
+HttpRequest.configure().set_request_proxy(TornadoRequest)
 ```
 
