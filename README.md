@@ -5,9 +5,11 @@
 
 #### 使用
 
-Python requires >= 3.6, Tornado >= 6.0.0
+Python requires >= 3.6
 
 ```python
+# Tornado >= 6.0.0
+import tornado.web
 from xform import fields
 from xform.form import SubmitForm
 from xform import schema

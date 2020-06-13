@@ -11,43 +11,6 @@ class BaseRequest:
     def get_argument(self,
                      name: str,
                      default: Any = None) -> Optional[str]:
-        raise NotImplementedError
-
-    def get_arguments(self,
-                      name: str,
-                      default: list = None) -> Optional[list]:
-        raise NotImplementedError
-
-    def get_query_argument(self,
-                           name: str,
-                           default: Any = None) -> Optional[str]:
-        raise NotImplementedError
-
-    def get_query_arguments(self,
-                            name: str,
-                            default: list = None) -> Optional[list]:
-        raise NotImplementedError
-
-    def get_from_header(self, name: str, default: Any = None) -> Optional[str]:
-        raise NotImplementedError
-
-    def get_from_cookie(self, name: str, default: Any = None) -> Optional[str]:
-        raise NotImplementedError
-
-    def get_body(self) -> Optional[str]:
-        raise NotImplementedError
-
-    def translate(self, message: str) -> str:
-        return message
-
-
-class TornadoRequest(BaseRequest):
-    def __init__(self, request):
-        super().__init__(request)
-
-    def get_argument(self,
-                     name: str,
-                     default: Any = None) -> Optional[str]:
         '''
         Get param from submit form.
 
@@ -55,7 +18,7 @@ class TornadoRequest(BaseRequest):
         :param default: <str>
         :return: <str>
         '''
-        return self.request.get_argument(name, default=default)
+        raise NotImplementedError
 
     def get_arguments(self,
                       name: str,
@@ -67,7 +30,7 @@ class TornadoRequest(BaseRequest):
         :param default: <str>
         :return: <list>
         '''
-        return self.request.get_arguments(name) or default
+        raise NotImplementedError
 
     def get_query_argument(self,
                            name: str,
@@ -79,7 +42,7 @@ class TornadoRequest(BaseRequest):
         :param default: <str>
         :return: <str>
         '''
-        return self.request.get_query_argument(name, default=default)
+        raise NotImplementedError
 
     def get_query_arguments(self,
                             name: str,
@@ -91,11 +54,9 @@ class TornadoRequest(BaseRequest):
         :param default: <str>
         :return: <list>
         '''
-        return self.request.get_query_arguments(name) or default
+        raise NotImplementedError
 
-    def get_from_header(self,
-                        name: str,
-                        default: Any = None) -> Optional[dict]:
+    def get_from_header(self, name: str, default: Any = None) -> Optional[str]:
         '''
         Get param from headers.
 
@@ -103,11 +64,9 @@ class TornadoRequest(BaseRequest):
         :param default: <str>
         :return: <str>
         '''
-        return self.request.request.headers.get(name, default)
+        raise NotImplementedError
 
-    def get_from_cookie(self,
-                        name: str,
-                        default: Any = None) -> Optional[str]:
+    def get_from_cookie(self, name: str, default: Any = None) -> Optional[str]:
         '''
         Get param from cookies.
 
@@ -115,7 +74,7 @@ class TornadoRequest(BaseRequest):
         :param default: <str>
         :return: <str>
         '''
-        return self.request.request.get_cookie(name, default=default)
+        raise NotImplementedError
 
     def get_body(self) -> Optional[str]:
         '''
@@ -123,7 +82,7 @@ class TornadoRequest(BaseRequest):
 
         :return: <str>
         '''
-        return self.request.request.body
+        raise NotImplementedError
 
     def translate(self, message: str) -> str:
         '''
@@ -132,6 +91,47 @@ class TornadoRequest(BaseRequest):
         :param message: <str>
         :return: <str>
         '''
+        return message
+
+
+class TornadoRequest(BaseRequest):
+    def __init__(self, request):
+        super().__init__(request)
+
+    def get_argument(self,
+                     name: str,
+                     default: Any = None) -> Optional[str]:
+        return self.request.get_argument(name, default=default)
+
+    def get_arguments(self,
+                      name: str,
+                      default: list = None) -> Optional[list]:
+        return self.request.get_arguments(name) or default
+
+    def get_query_argument(self,
+                           name: str,
+                           default: Any = None) -> Optional[str]:
+        return self.request.get_query_argument(name, default=default)
+
+    def get_query_arguments(self,
+                            name: str,
+                            default: list = None) -> Optional[list]:
+        return self.request.get_query_arguments(name) or default
+
+    def get_from_header(self,
+                        name: str,
+                        default: Any = None) -> Optional[dict]:
+        return self.request.request.headers.get(name, default)
+
+    def get_from_cookie(self,
+                        name: str,
+                        default: Any = None) -> Optional[str]:
+        return self.request.request.get_cookie(name, default=default)
+
+    def get_body(self) -> Optional[str]:
+        return self.request.request.body
+
+    def translate(self, message: str) -> str:
         return self.request.locale.translate(message)
 
 
