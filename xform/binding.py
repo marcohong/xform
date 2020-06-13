@@ -1,26 +1,15 @@
 '''
 Binding request datas.
 
-See the RequestData class for more information.
+See the DataBinding class for more information.
 
 '''
-from typing import Optional, Union
-from tornado import httputil
+from typing import Union, Optional
 
+from .httputil import HttpRequest, BaseRequest
 from .utils import AttrDict, JsonDecodeError, json_loads
 
-'''
-Content-Type:
-    text/html
-    text/xml
-    text/plain
-    application/xml
-    application/json
-    application/x-www-form-urlencoded
-    multipart/form-data
-    application/x-yaml
-'''
-
+# Content-Type
 IEME = AttrDict(
     MIME_HTML='text/html',
     MIME_XML='text/xml',
@@ -33,9 +22,9 @@ IEME = AttrDict(
 
 
 class Content:
-    def __init__(self, req: httputil.HTTPServerRequest, fields: dict) -> None:
+    def __init__(self, req: BaseRequest, fields: dict) -> None:
         '''
-        :param req: <tornado.httputil.HTTPServerRequest> tornado request
+        :param req: <BaseRequest> tornado/flask... request
         :param fields: <dict> {name:field_class/regular}
         '''
         self.req = req
@@ -62,7 +51,7 @@ class JsonContent(Content):
         :return: <dict> name:value
         '''
         try:
-            data = json_loads(self.req.request.body)
+            data = json_loads(self.req.get_body())
         except (JsonDecodeError, ValueError):
             data = None
         return data
@@ -121,7 +110,7 @@ class CookiesContent(Content):
         :return: <dict> name:value
         '''
         datas = {}
-        cget = self.req.get_cookie
+        cget = self.req.get_from_cookie
         for name, field in self.fields.items():
             if isinstance(field, str) or field.lst is False:
                 value = [cget(field.data_key)]
@@ -140,7 +129,7 @@ class HeadersContent(Content):
         :return: <dict> name:value
         '''
         datas = {}
-        hget = self.req.request.headers.get
+        hget = self.req.get_from_header
         for name, field in self.fields.items():
             if isinstance(field, str) or field.lst is False:
                 value = hget(field.data_key)
@@ -152,72 +141,64 @@ class HeadersContent(Content):
         return datas
 
 
-class RequestData:
-    '''
-    Binding request datas.
+LOCATIONS = dict(json=JsonContent,
+                 query=QueryContent,
+                 form=FormContent,
+                 headers=HeadersContent,
+                 cookies=CookiesContent)
 
-    usage:
-        datas = RequestData(req,fields).bind()
 
-        or
-
-        rd = RequestData(req,fields)
-        print(rd.name())
-        datas = rd.bind()
-
-    '''
-    __location_map__ = {
-        'json': JsonContent,
-        'query': QueryContent,
-        'form': FormContent,
-        'headers': HeadersContent,
-        'cookies': CookiesContent
-    }
-
-    default_content = FormContent
+class DataBinding:
 
     def __init__(self,
-                 req: httputil.HTTPServerRequest,
+                 req: 'HttpRequest',
                  fields: dict,
                  locations: Union[str, tuple] = None) -> None:
-        '''
-        :param req: <tornado.httputil.HTTPServerRequest> tornado request
-        :param fields: <dict> {name:field_class/regular}
-        :param locations: <str/tuple> json/query/form/headers/cookies
-        '''
         self.req = req
+        _http = HttpRequest.configure()
+        self.request = _http.request(req)
         self.fields = fields
         self.locations = locations
         self.content = None
-        self.accept = req.request.headers.get('Accept')
-        self.content_type = req.request.headers.get('Content-Type',
-                                                    IEME.MIME_FORM)
 
-    def _base_data(self):
-        return dict(req=self.req, fields=self.fields)
+    def _base_kwargs(self) -> dict:
+        return dict(req=self.request, fields=self.fields)
 
-    def configure(self) -> None:
-        kwds = self._base_data()
-        if IEME.MIME_JSON in self.content_type:
+    def _auto_configure(self) -> None:
+        kwds = self._base_kwargs()
+        content_type = self.request.get_from_header('Content-Type')
+        if IEME.MIME_JSON in content_type:
             self.content = JsonContent(**kwds)
-        elif IEME.MIME_FORM in self.content_type:
-            self.content = FormContent(**kwds)
-        elif IEME.MIME_MULTPART_FORM in self.content_type:
+        elif IEME.MIME_FORM in content_type or \
+                IEME.MIME_MULTPART_FORM in content_type:
             self.content = FormContent(**kwds)
         else:
             self.content = FormContent(**kwds)
 
     def bind(self) -> Optional[dict]:
-        if self.locations:
-            if isinstance(self.locations, str):
-                self.locations = (self.locations,)
-            for location in self.locations:
-                self.content = self.__location_map__.get(
-                    location)(**self._base_data())
-                data = self.content.binding()
-                if data:
-                    return data
-            return None
-        else:
-            self.configure()
+        '''
+        Data binding
+
+        :return: <dict>
+        '''
+        if not self.locations:
+            self._auto_configure()
             return self.content.binding()
+
+        if isinstance(self.locations, str):
+            self.locations = (self.locations,)
+        for location in self.locations:
+            self.content = LOCATIONS.get(location)(**self._base_kwargs())
+            data = self.content.binding()
+            if data:
+                return data
+        return None
+
+    def translate(self, message: str) -> str:
+        '''
+        Translation message
+
+        :param message: <str>
+        :return: <str>
+        '''
+        return self.request.translate(message)

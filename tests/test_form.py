@@ -20,7 +20,7 @@ class TestForm:
     async def test_a(cls):
         _form = UserForm()
         data = {'id': 2,
-                'uname': 'hwwwh',
+                'uname': 'tester',
                 'stime': '2020-01-01',
                 'etime': '2021-01-01',
                 'roles': [1, 2]}

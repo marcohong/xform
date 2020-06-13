@@ -19,7 +19,7 @@ from tornado import httputil
 
 from . import FormABC
 from .fields import Field
-from .binding import RequestData
+from .binding import DataBinding
 
 __all__ = ['Form', 'SubmitForm']
 
@@ -56,7 +56,7 @@ class Form(FormABC, metaclass=FormMeta):
 
     async def _bind(self,
                     data: dict,
-                    request: httputil.HTTPServerRequest = None
+                    translate: callable = None
                     ) -> tuple:
         _errors, _datas = {}, {}
         for name, field in self.__fields__.items():
@@ -64,7 +64,7 @@ class Form(FormABC, metaclass=FormMeta):
             validate = await field._run_validate(value,
                                                  name,
                                                  data,
-                                                 request=request)
+                                                 translate=translate)
             if not validate.is_valid:
                 _errors[field.data_key] = validate.error
             setattr(self, name, validate.get_value())
@@ -82,10 +82,10 @@ class Form(FormABC, metaclass=FormMeta):
         :param locations: <uple/str> form/json/query/headers/cookies
         :return: <tuple> (data, error)
         '''
-        kwds = RequestData(request,
-                           self.__fields__,
-                           locations=locations).bind()
-        return self._bind(kwds, request)
+        _bind = DataBinding(request,
+                            self.__fields__,
+                            locations=locations)
+        return self._bind(_bind.bind(), translate=_bind.translate)
 
     def dict_bind(self,
                   data: dict,
@@ -97,7 +97,11 @@ class Form(FormABC, metaclass=FormMeta):
         :param request: <httputil.HTTPServerRequest>
         :return: <tuple> (data, error)
         '''
-        return self._bind(data, request)
+        translate: callable = None
+        if request:
+            _bind = DataBinding(request, data)
+            translate = _bind.translate
+        return self._bind(data, translate=translate)
 
 
 class SubmitForm:

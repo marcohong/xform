@@ -6,7 +6,6 @@ import types
 from collections.abc import Iterable
 from typing import Any, Tuple, Union, Optional
 
-from tornado import httputil
 from .validate import ValidationError, Validator
 from . import FieldABC
 from . import FormABC
@@ -143,7 +142,7 @@ class Field(FieldABC):
                             value: ALL_TYPES,
                             attr: str,
                             data: dict,
-                            request: httputil.HTTPServerRequest = None
+                            translate: callable = None
                             ) -> 'Field':
         '''
         Start running validate.
@@ -151,10 +150,12 @@ class Field(FieldABC):
         :param value: <str/list> request value
         :param attr: <str> field name
         :param data: <dict> request datas
-        :param request: <httputil.HTTPServerRequest>
+        :param translate: <callable>
+            def translate(message) -> str:
+                ...
         '''
         self.reset()
-        self.locale = request.locale.translate if request else None
+        self.locale = translate
         self.value = value
         if self.lst:
             value = value if isinstance(value, (list, tuple)) else [value]
@@ -404,10 +405,10 @@ class Nested(Field):
                             value: Union[str, dict],
                             attr: str,
                             data: dict,
-                            request: httputil.HTTPServerRequest
+                            translate: callable = None
                             ) -> "Field":
         self.reset()
-        self.locale = request.locale.translate
+        self.locale = translate
         self.value = value
         if not self._valid_required(value):
             return self
@@ -418,7 +419,7 @@ class Nested(Field):
             data = json_loads(value) if isinstance(value, str) else value
         except (ValueError, AssertionError):
             self.set_error('invalid')
-        datas, errors = await self.schema.dict_bind(data, request)
+        datas, errors = await self.schema.dict_bind(data, translate)
         if errors:
             self.error = errors
         else:
