@@ -28,7 +28,7 @@ e.g:
     Tornado: tornado.web.RequestHandler
 '''
 # web request object
-REQUESTS = 'Request'
+_REQUEST = 'Request'
 
 
 class FormMeta(type):
@@ -79,7 +79,7 @@ class Form(FormABC, metaclass=FormMeta):
         return _datas, _errors
 
     def bind(self,
-             request: REQUESTS,
+             request: _REQUEST,
              locations: Union[tuple, str] = None) -> tuple:
         '''Bind data from request.
 
@@ -96,7 +96,7 @@ class Form(FormABC, metaclass=FormMeta):
 
     def dict_bind(self,
                   data: dict,
-                  request: REQUESTS = None
+                  request: _REQUEST = None
                   ) -> tuple:
         '''Check the accuracy of data.
 
@@ -140,7 +140,7 @@ class SubmitForm:
             raise AttributeError(f'SubmitForm object has not attribute {key}.')
 
     def bind(self,
-             request: REQUESTS,
+             request: _REQUEST,
              locations: Union[str, tuple] = None) -> tuple:
         if not self.__form__:
             form = type('SubmitForm', (Form,), self.__fields__)
