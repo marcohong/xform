@@ -28,7 +28,6 @@ Web request object.
 e.g:
     Tornado: tornado.web.RequestHandler
 '''
-# web request object
 _REQUEST = 'Request'
 
 

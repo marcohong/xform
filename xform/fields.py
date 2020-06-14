@@ -158,10 +158,14 @@ class Field(FieldABC):
         self.locale = translate
         self.value = value
         if self.lst:
-            value = value if isinstance(value, (list, tuple)) else [value]
-            not_null = False if not value else all([0 if x in (None, '')
-                                                    else 1 for x in value])
+            if not value or value is None:
+                value = [None]
+            elif not isinstance(value, (list, tuple)):
+                value = [value]
+            not_null = all([0 if x in self.null_values else 1 for x in value])
             if not self._valid_required(value if not_null else ''):
+                return self
+            if self.required is False and self._value_is_null:
                 return self
             for val in value:
                 if not isinstance(val, (str, int, float, bool)):
