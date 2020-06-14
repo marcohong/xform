@@ -14,6 +14,7 @@ usage:
     print(datas)
 
 '''
+import types
 from typing import Any, Union
 
 from . import FormABC
@@ -106,8 +107,11 @@ class Form(FormABC, metaclass=FormMeta):
         '''
         translate: callable = None
         if request:
-            _bind = DataBinding(request, data)
-            translate = _bind.translate
+            if isinstance(request, (types.FunctionType, types.MethodType)):
+                translate = request
+            else:
+                _bind = DataBinding(request, data)
+                translate = _bind.translate
         return self._bind(data, translate=translate)
 
 
