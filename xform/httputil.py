@@ -20,14 +20,11 @@ class BaseRequest:
         '''
         raise NotImplementedError
 
-    def get_arguments(self,
-                      name: str,
-                      default: list = None) -> Optional[list]:
+    def get_arguments(self, name: str) -> Optional[list]:
         '''
         Get params from submit form.
 
         :param name: <str>
-        :param default: <str>
         :return: <list>
         '''
         raise NotImplementedError
@@ -44,14 +41,11 @@ class BaseRequest:
         '''
         raise NotImplementedError
 
-    def get_query_arguments(self,
-                            name: str,
-                            default: list = None) -> Optional[list]:
+    def get_query_arguments(self, name: str) -> Optional[list]:
         '''
         Get params from query string.
 
         :param name: <str>
-        :param default: <str>
         :return: <list>
         '''
         raise NotImplementedError
@@ -93,6 +87,14 @@ class BaseRequest:
         '''
         return message
 
+    def get_request_method(self) -> str:
+        '''
+        Get request method
+
+        :return: <str> GET,POST,PUT,DELETE,OPTIONS(to upper)
+        '''
+        return 'POST'
+
 
 class TornadoRequest(BaseRequest):
     def __init__(self, request):
@@ -104,9 +106,8 @@ class TornadoRequest(BaseRequest):
         return self.request.get_argument(name, default=default)
 
     def get_arguments(self,
-                      name: str,
-                      default: list = None) -> Optional[list]:
-        return self.request.get_arguments(name) or default
+                      name: str) -> Optional[list]:
+        return self.request.get_arguments(name)
 
     def get_query_argument(self,
                            name: str,
@@ -114,9 +115,8 @@ class TornadoRequest(BaseRequest):
         return self.request.get_query_argument(name, default=default)
 
     def get_query_arguments(self,
-                            name: str,
-                            default: list = None) -> Optional[list]:
-        return self.request.get_query_arguments(name) or default
+                            name: str) -> Optional[list]:
+        return self.request.get_query_arguments(name)
 
     def get_from_header(self,
                         name: str,
@@ -133,6 +133,9 @@ class TornadoRequest(BaseRequest):
 
     def translate(self, message: str) -> str:
         return self.request.locale.translate(message)
+
+    def get_request_method(self) -> str:
+        return self.request.request.method
 
 
 class HttpRequest:

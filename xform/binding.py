@@ -93,10 +93,10 @@ class QueryContent(Content):
         datas = {}
         for name, field in self.fields.items():
             if isinstance(field, str) or field.lst is False:
-                value = self.req.get_query_arguments(field.data_key)
-            else:
                 value = self.req.get_query_argument(field.data_key,
                                                     default=None)
+            else:
+                value = self.req.get_query_arguments(field.data_key)
             datas[name] = value
         return datas
 
@@ -166,8 +166,11 @@ class DataBinding:
 
     def _auto_configure(self) -> None:
         kwds = self._base_kwargs()
-        content_type = self.request.get_from_header('Content-Type')
-        if IEME.MIME_JSON in content_type:
+        content_type = self.request.get_from_header('Content-Type', '')
+        _method = self.request.get_request_method()
+        if _method.upper() == 'GET' and not content_type:
+            self.content = QueryContent(**kwds)
+        elif IEME.MIME_JSON in content_type:
             self.content = JsonContent(**kwds)
         elif IEME.MIME_FORM in content_type or \
                 IEME.MIME_MULTPART_FORM in content_type:
