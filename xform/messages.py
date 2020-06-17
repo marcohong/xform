@@ -43,7 +43,7 @@ class ErrMsg:
 
         Important: Executed before the import fields.
 
-        :param messages: <dict> messages, see _err_msgs define
+        :param messages: `<dict>` messages, see _err_msgs define
         :return:
         '''
         if messages:

@@ -1,7 +1,8 @@
 '''
 Form submission verification class.
 
-usage:
+usage::
+
     class UserForm(Form):
         id = Integer(required=True)
         name = Field(required=True, length=(1, 3))
@@ -86,8 +87,8 @@ class Form(FormABC, metaclass=FormMeta):
         Bind data and check the accuracy of data.
 
         :param request: e.g: tornado.web.RequestHandler
-        :param locations: <uple/str> form/json/query/headers/cookies
-        :return: <tuple> (data, error)
+        :param locations: `<uple/str>` form/json/query/headers/cookies
+        :return: `<tuple>` (data, error)
         '''
         _bind = DataBinding(request,
                             self.__fields__,
@@ -100,9 +101,9 @@ class Form(FormABC, metaclass=FormMeta):
                   ) -> tuple:
         '''Check the accuracy of data.
 
-        :param data: <dict>
+        :param data: `<dict>`
         :param request: e.g: tornado.web.RequestHandler
-        :return: <tuple> (data, error)
+        :return: `<tuple>` (data, error)
         '''
         translate: callable = None
         if request:
@@ -118,7 +119,7 @@ class SubmitForm:
     '''
     Create simple submit form.
 
-    useage:
+    useage::
 
         form = SubmitForm(
             id = Integer(required=True)

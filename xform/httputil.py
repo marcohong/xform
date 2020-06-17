@@ -14,9 +14,9 @@ class BaseRequest:
         '''
         Get param from submit form.
 
-        :param name: <str>
-        :param default: <str>
-        :return: <str>
+        :param name: `<str>`
+        :param default: `<str>`
+        :return: `<str>`
         '''
         raise NotImplementedError
 
@@ -24,8 +24,8 @@ class BaseRequest:
         '''
         Get params from submit form.
 
-        :param name: <str>
-        :return: <list>
+        :param name: `<str>`
+        :return: `<list>`
         '''
         raise NotImplementedError
 
@@ -35,9 +35,9 @@ class BaseRequest:
         '''
         Get param from query string.
 
-        :param name: <str>
-        :param default: <str>
-        :return: <str>
+        :param name: `<str>`
+        :param default: `<str>`
+        :return: `<str>`
         '''
         raise NotImplementedError
 
@@ -45,8 +45,8 @@ class BaseRequest:
         '''
         Get params from query string.
 
-        :param name: <str>
-        :return: <list>
+        :param name: `<str>`
+        :return: `<list>`
         '''
         raise NotImplementedError
 
@@ -54,9 +54,9 @@ class BaseRequest:
         '''
         Get param from headers.
 
-        :param name: <str>
-        :param default: <str>
-        :return: <str>
+        :param name: `<str>`
+        :param default: `<str>`
+        :return: `<str>`
         '''
         raise NotImplementedError
 
@@ -64,9 +64,9 @@ class BaseRequest:
         '''
         Get param from cookies.
 
-        :param name: <str>
-        :param default: <str>
-        :return: <str>
+        :param name: `<str>`
+        :param default: `<str>`
+        :return: `<str>`
         '''
         raise NotImplementedError
 
@@ -74,7 +74,7 @@ class BaseRequest:
         '''
         Get request body.
 
-        :return: <str>
+        :return: `<str>`
         '''
         raise NotImplementedError
 
@@ -82,8 +82,8 @@ class BaseRequest:
         '''
         Translation message
 
-        :param message: <str>
-        :return: <str>
+        :param message: `<str>`
+        :return: `<str>`
         '''
         return message
 
@@ -91,7 +91,7 @@ class BaseRequest:
         '''
         Get request method
 
-        :return: <str> GET,POST,PUT,DELETE,OPTIONS(to upper)
+        :return: `<str>` GET,POST,PUT,DELETE,OPTIONS(to upper)
         '''
         return 'POST'
 
@@ -155,10 +155,11 @@ class HttpRequest:
         '''
         Set request proxy.
 
-        usage:
+        usage::
+
             HttpRequest.configure().set_request_proxy(TornadoRequest)
 
-        :param request: <BaseRequest>
+        :param request: `<BaseRequest>`
         :return:
         '''
         self._request = request

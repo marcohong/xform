@@ -24,8 +24,8 @@ IEME = AttrDict(
 class Content:
     def __init__(self, req: BaseRequest, fields: dict) -> None:
         '''
-        :param req: <BaseRequest> tornado/flask... request
-        :param fields: <dict> {name:field_class/regular}
+        :param req: `<BaseRequest>` tornado/flask... request
+        :param fields: `<dict>` {name:field_class/regular}
         '''
         self.req = req
         self.fields = fields
@@ -48,7 +48,7 @@ class JsonContent(Content):
 
     def binding(self) -> Optional[dict]:
         '''
-        :return: <dict> name:value
+        :return: `<dict>` name:value
         '''
         try:
             data = json_loads(self.req.get_body())
@@ -69,7 +69,7 @@ class FormContent(Content):
 
     def binding(self) -> Optional[dict]:
         '''
-        :return: <dict> name:value
+        :return: `<dict>` name:value
         '''
         datas = {}
         for name, field in self.fields.items():
@@ -88,7 +88,7 @@ class QueryContent(Content):
 
     def binding(self) -> Optional[dict]:
         '''
-        :return: <dict> name:value
+        :return: `<dict>` name:value
         '''
         datas = {}
         for name, field in self.fields.items():
@@ -107,7 +107,7 @@ class CookiesContent(Content):
 
     def binding(self) -> Optional[dict]:
         '''
-        :return: <dict> name:value
+        :return: `<dict>` name:value
         '''
         datas = {}
         cget = self.req.get_from_cookie
@@ -126,7 +126,7 @@ class HeadersContent(Content):
 
     def binding(self) -> Optional[dict]:
         '''
-        :return: <dict> name:value
+        :return: `<dict>` name:value
         '''
         datas = {}
         hget = self.req.get_from_header
@@ -182,7 +182,7 @@ class DataBinding:
         '''
         Data binding
 
-        :return: <dict>
+        :return: `<dict>`
         '''
         if not self.locations:
             self._auto_configure()
@@ -201,7 +201,7 @@ class DataBinding:
         '''
         Translation message
 
-        :param message: <str>
-        :return: <str>
+        :param message: `<str>`
+        :return: `<str>`
         '''
         return self.request.translate(message)
