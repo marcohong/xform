@@ -67,6 +67,7 @@ class Form(FormABC, metaclass=FormMeta):
                     translate: callable = None
                     ) -> tuple:
         _errors, _datas = {}, {}
+        data = data or {}
         for name, field in self.__fields__.items():
             value = data.get(name)
             validate = await field._run_validate(value,
