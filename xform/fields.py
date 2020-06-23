@@ -470,13 +470,13 @@ class List(Field):
             return
         if self._data_type and callable(self._data_type):
             try:
-                data = [self._data_type(i) for i in value]
-                if not all(data):
+                _data = [self._data_type(i) for i in value]
+                if not all(_data):
                     raise ValueError
             except ValueError:
                 self.set_error('invalid')
                 return
-            return data
+            return _data
 
 
 class IntList(List):
@@ -895,10 +895,10 @@ class Jsonify(Str):
                         data: dict) -> Optional[dict]:
         try:
             if isinstance(value, dict):
-                data = value
+                _data = value
             else:
-                data = json_loads(value)
-            assert isinstance(data, (list, dict))
-            return data
+                _data = json_loads(value)
+            assert isinstance(_data, (list, dict))
+            return _data
         except (ValueError, AssertionError):
             self.set_error('invalid')
