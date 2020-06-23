@@ -287,7 +287,7 @@ class Number(Field):
                  **kwargs: Any):
         self._min = _min
         self._max = _max
-        kwargs['required'] = required
+        kwargs.update({'required': required})
         super().__init__(**kwargs)
 
     def get_value(self):
@@ -331,6 +331,13 @@ class Integer(Number):
     regex = r'^0$|^[-1-9]\d*$'
     cvt_type = int
 
+    def __init__(self,
+                 *,
+                 _min: Union[int, float] = 0,
+                 **kwargs: Any):
+        kwargs.update({'_min': _min})
+        super().__init__(**kwargs)
+
 
 class Float(Number):
     regex = r'^\d+\.\d+$'
@@ -341,7 +348,7 @@ class Str(Field):
     cvt_type = str
 
     def __init__(self, *, length: tuple = (0, 255), **kwargs: Any):
-        kwargs['length'] = length
+        kwargs.update({'length': length})
         super().__init__(**kwargs)
 
     def get_value(self):
@@ -369,7 +376,7 @@ class EnStr(Str):
                  length: tuple = (0, 255),
                  **kwargs: Any):
         self.regex = vtype
-        kwargs['length'] = length
+        kwargs.update({'length': length})
         super().__init__(**kwargs)
 
     async def _validate(self,
@@ -393,7 +400,7 @@ class Nested(Field):
                  required: bool = False,
                  **kwargs: Any):
         self.nested = nested
-        kwargs['required'] = required
+        kwargs.update({'required': required})
         super().__init__(**kwargs)
 
     @property
@@ -445,8 +452,7 @@ class List(Field):
                  data_type: callable = None,
                  length: Union[int, tuple] = None,
                  **kwargs: Any):
-        kwargs['lst'] = True
-        kwargs['length'] = length
+        kwargs.update({'lst': True, 'length': length})
         self._data_type = data_type
         self._min_len = min_len
         self._max_len = max_len or 0
@@ -476,7 +482,7 @@ class List(Field):
 class IntList(List):
     def __init__(self, dedup: bool = True, **kwargs):
         self.dedup = dedup
-        kwargs['data_type'] = int
+        kwargs.update({'data_type': int})
         super().__init__(**kwargs)
 
     def get_value(self):
@@ -526,7 +532,7 @@ class Boolean(Field):
 
 class Timestamp(Integer):
     def __init__(self, length: int = 10, **kwargs: Any):
-        kwargs['length'] = length
+        kwargs.update({'length': length})
         super().__init__(**kwargs)
 
     async def _validate(self,
@@ -554,7 +560,7 @@ class DateTime(Field):
                  **kwargs: Any):
         self.fmt = fmt
         self.convert = convert
-        kwargs['default'] = default
+        kwargs.update({'default': default})
         super().__init__(**kwargs)
 
     @classmethod
@@ -588,7 +594,7 @@ class Date(DateTime):
     def __init__(self,
                  fmt: str = '%Y-%m-%d',
                  **kwargs: Any):
-        kwargs['fmt'] = fmt
+        kwargs.update({'fmt': fmt})
         super().__init__(**kwargs)
 
 
@@ -761,7 +767,7 @@ class Username(Str):
                  regex: str = regex,
                  length: tuple = (3, 32),
                  **kwargs: Any):
-        kwargs['length'] = length
+        kwargs.update({'length': length})
         self._regex = regex
         super().__init__(**kwargs)
 
@@ -789,7 +795,7 @@ class Password(Str):
                  regex: str = regex,
                  length: tuple = (0, 32),
                  **kwargs: Any):
-        kwargs['length'] = (0, 256)
+        kwargs.update({'length': (0, 256)})
         self._length = length
         self._regex = regex
         super().__init__(**kwargs)
@@ -814,7 +820,7 @@ class Order(Str):
 
     def __init__(self, _in: Union[list, tuple], **kwargs):
         self.columns = list(set(_in))
-        kwargs['length'] = None
+        kwargs.update({'length': None})
         super().__init__(**kwargs)
 
     async def _validate(self,
@@ -854,7 +860,7 @@ class IpAddr(Str):
     def __init__(self, *,
                  length: tuple = (8, 32),
                  **kwargs: Any):
-        kwargs['length'] = length
+        kwargs.update({'length': length})
         super().__init__(**kwargs)
 
     async def _validate(self,
@@ -875,7 +881,7 @@ class Jsonify(Str):
     }
 
     def __init__(self, **kwargs: Any):
-        kwargs['length'] = None
+        kwargs.update({'length': None})
         super().__init__(**kwargs)
 
     def get_value(self):
