@@ -94,6 +94,7 @@ class Field(FieldABC):
                 self.err_msg = {**self.err_msg, **err_msg}
         else:
             self.err_msg = err_msg or {}
+        self.add_err_msg()
         self.value = self.error = self.locale = None
 
     @property
