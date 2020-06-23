@@ -109,9 +109,9 @@ from xform.form import SubmitForm
 class UserField(Integer):
     # 不需要转换，因为返回值是一个缓存对象
     cvt_type = None
-    err_msg = {
-        'not_exist': 'User does not exist'
-    }
+
+    def add_err_msg(self) -> None:
+        self.err_msg.update({'not_exist': 'User does not exist'})
 
     async def _validate(self,
                         value: VALUE_TYPES,
@@ -127,9 +127,9 @@ class UserField(Integer):
 
 class OrderNOField(Str):
     regex = r'^[a-zA-Z0-9_]+$'
-    err_msg = {
-        'invaild': 'Invalid order'
-    }
+
+    def add_err_msg(self) -> None:
+        self.err_msg.update({'invalid': 'Invalid order'})
 
     def __init__(self,
                  *,
@@ -144,7 +144,7 @@ class OrderNOField(Str):
                         data: dict) -> Optional[str]:
         ret = re.match(self.regex, value)
         if not ret:
-            self.set_error('invaild')
+            self.set_error('invalid')
         return value
 
 # user_id是表单提交的字段(data_key是可选的，如果为空则使用user作为表单字段)

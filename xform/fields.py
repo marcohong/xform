@@ -122,6 +122,17 @@ class Field(FieldABC):
             return str(self.value)
         return None
 
+    def add_err_msg(self) -> None:
+        '''
+        Add error message to err_msg.
+
+        useg::
+
+            def add_err_msg(self):
+                self.err_msg.update({'invalid':'Invalid id'})
+        '''
+        pass
+
     def set_error(self,
                   key: str,
                   default: str = ErrMsg.get_message('default_failed'),
