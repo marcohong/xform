@@ -499,6 +499,8 @@ class IntList(List):
 
     def get_value(self):
         if self.is_valid:
+            if not self.cvt_type:
+                return self.value
             if isinstance(self.value, list):
                 data = [int(i) for i in self.value if
                         isinstance(i, int) or i.isdigit()]
