@@ -554,6 +554,8 @@ class Timestamp(Integer):
                         attr: str,
                         data: dict) -> Optional[str]:
         try:
+            if self.length >= 13 and len(str(value)) >= 13:
+                value = str(value)[:10]
             date = time.strftime('%Y-%m-%d %H:%M:%S',
                                  time.localtime(int(value)))
             datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
