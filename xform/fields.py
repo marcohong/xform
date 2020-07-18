@@ -259,7 +259,7 @@ class Field(FieldABC):
 
         If the return value is the return value, otherwise the value
         '''
-        pass
+        return value
 
     async def _validator(self, value: VALUE_TYPES) -> None:
         for validate in self.validators:
