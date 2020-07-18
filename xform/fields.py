@@ -59,8 +59,21 @@ class Field(FieldABC):
                     'invalid':'name is invalid.'
                 }
         :param when_field: `<str>` others params field
-        :param when_value: `<list/tuple>` if field value in when_value,
-            required is True
+        :param when_value: `<Any>` if when_value, required is True.
+            e.g:
+                # callable, return bool
+                id=fiels.Integer(required=False, default=0)
+                name=fiels.String(required=False,when_field='id',
+                    when_value=lambda x: x and int(x) > 0)
+                # in when_value
+                display=fields.Boolean(required=False,default=False)
+                address=fields.String(required=False,when_field='display',
+                    when_value=fields.Boolean.real)
+                # equal when_value
+                status=fields.Integer(required=False,default=0,
+                    validate=OneOf((1,2)))
+                address=fields.String(required=False,when_field='status',
+                    when_value='2')
         :param kwargs: `<dict>` others params
         '''
         self.data_key = data_key
@@ -194,8 +207,14 @@ class Field(FieldABC):
                     not self._valid_length(value):
                 return self
         if self.when_field:
-            if data.get(self.when_field) in self.when_value \
-                    and self._value_is_null:
+            if callable(self.when_value):
+                # eg. when_value = lambda x: x and int(x) > 0
+                _flag = self.when_value(data.get(self.when_field))
+            elif isinstance(self.when_value, (tuple, dict)):
+                _flag = data.get(self.when_field) in self.when_value
+            else:
+                _flag = str(data.get(self.when_field)) == str(self.when_value)
+            if _flag and self._value_is_null:
                 self.set_error('invalid')
                 return self
         return await self._abc_validate(value, attr, data)
