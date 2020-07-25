@@ -820,7 +820,7 @@ class Username(Str):
 
 
 class Password(Str):
-    regex = r'^([a-zA-Z0-9_!$@.#*&~^]){%d,%d}$'
+    regex = r'^([a-zA-Z0-9_!=$@.#*&~^]){%d,%d}$'
     err_msg = {
         'invalid': ErrMsg.get_message('invalid_password')
     }
@@ -828,9 +828,9 @@ class Password(Str):
     def __init__(self,
                  *,
                  regex: str = regex,
-                 length: tuple = (0, 32),
+                 length: tuple = (0, 512),
                  **kwargs: Any):
-        kwargs.update({'length': (0, 256)})
+        kwargs.update({'length': length})
         self._length = length
         self._regex = regex
         super().__init__(**kwargs)
