@@ -396,7 +396,7 @@ class EnStr(Str):
     letters = r'^[a-zA-Z]+$'
     upper = r'^[A-Z]+$'
     lower = r'^[a-z]+$'
-    en_str = r'^[a-zA-Z0-9_!$@.#*&~^]+$'
+    en_str = r'^[a-zA-Z0-9_!$@.#*&~^\\-]+$'
     letters_digit = r'^\w+$'
     err_msg = {
         'invalid': ErrMsg.get_message('default_invalid')
@@ -829,7 +829,7 @@ class Password(Str):
     def __init__(self,
                  *,
                  regex: str = regex,
-                 length: tuple = (0, 512),
+                 length: tuple = (0, 256),
                  **kwargs: Any):
         kwargs.update({'length': length})
         self._length = length
