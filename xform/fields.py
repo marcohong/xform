@@ -122,7 +122,8 @@ class Field(FieldABC):
     def get_value(self):
         if self.is_valid:
             return self.value
-        return self.default
+        if self.default and callable(self.default):
+            return self.default()
 
     def get_defalut_value(self):
         if self.default and callable(self.default):
