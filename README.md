@@ -145,6 +145,7 @@ class OrderNOField(Str):
         ret = re.match(self.regex, value)
         if not ret:
             self.set_error('invalid')
+            return
         return value
 
 # user_id是表单提交的字段(data_key是可选的，如果为空则使用user作为表单字段)
