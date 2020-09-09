@@ -40,7 +40,7 @@ class Field(FieldABC):
                  validate: Any = None,
                  err_msg: str = None,
                  when_field: str = None,
-                 when_value: Union[list, tuple] = None,
+                 when_value: Any = None,
                  **kwargs: Any) -> None:
         '''
         :param data_key: `<str>` submit form parameters key, default field name
@@ -59,7 +59,8 @@ class Field(FieldABC):
                     'invalid':'name is invalid.'
                 }
         :param when_field: `<str>` others params field
-        :param when_value: `<Any>` if when_value, required is True.
+        :param when_value: `<Any>` callable/list/tuple/str/bool/int
+            if when_value, required is True.
             e.g:
                 # callable, return bool
                 id=fiels.Integer(required=False, default=0)
@@ -82,9 +83,8 @@ class Field(FieldABC):
         self.length = length
         self.lst = lst
         self.when_field = when_field
-        if when_field and (not when_value or
-                           not isinstance(when_value, (list, tuple))):
-            raise ValueError('when_value invalid, must be an array or tuple')
+        if when_field and not when_value:
+            raise ValueError('when_value invalid')
         self.when_value = when_value
         self.kwargs = kwargs
         self.null_values = (None, '',)
