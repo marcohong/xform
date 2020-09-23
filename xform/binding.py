@@ -113,9 +113,9 @@ class CookiesContent(Content):
         cget = self.req.get_from_cookie
         for name, field in self.fields.items():
             if isinstance(field, str) or field.lst is False:
-                value = [cget(field.data_key)]
-            else:
                 value = cget(field.data_key)
+            else:
+                value = [cget(field.data_key)]
             datas[name] = value
         return datas
 
@@ -133,10 +133,8 @@ class HeadersContent(Content):
         for name, field in self.fields.items():
             if isinstance(field, str) or field.lst is False:
                 value = hget(field.data_key)
-                if isinstance(value, str):
-                    value = [value]
             else:
-                value = hget(field.data_key)
+                value = [hget(field.data_key)]
             datas[name] = value
         return datas
 
@@ -196,6 +194,19 @@ class DataBinding:
             if data:
                 return data
         return None
+
+    @staticmethod
+    def dict_binding(fields: dict, data: dict) -> Optional[dict]:
+        _data = {}
+        for name, field in fields.items():
+            if isinstance(field, str) or field.lst is False:
+                value = data.get(field.data_key, None)
+            else:
+                value = data.get(field.data_key, None)
+                if isinstance(value, str):
+                    value = [value]
+            _data[name] = value
+        return _data
 
     def translate(self, message: str) -> str:
         '''

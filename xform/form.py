@@ -113,6 +113,7 @@ class Form(FormABC, metaclass=FormMeta):
             else:
                 _bind = DataBinding(request, data)
                 translate = _bind.translate
+        data = DataBinding.dict_binding(self.__fields__, data)
         return self._bind(data, translate=translate)
 
 
