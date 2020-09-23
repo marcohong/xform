@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='xform',
-    version='0.1.0',
+    version='0.1.1',
     description='Binding form data validation framework.',
     author='Maco',
     author_email='macohong@hotmail.com',
