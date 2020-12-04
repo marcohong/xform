@@ -1,3 +1,4 @@
+import sys
 import datetime
 import json
 import tornado.web
@@ -55,8 +56,13 @@ def app():
     application = tornado.web.Application([(r'/', MainHandler)])
     http_server = tornado.httpserver.HTTPServer(application)
     http_server.listen(options.port)
+    print(f'Server running on http://localhost:{options.port}')
     tornado.ioloop.IOLoop.current().start()
 
 
 if __name__ == "__main__":
-    app()
+    try:
+        app()
+    except KeyboardInterrupt:
+        print('KeyboardInterrupt, exit.')
+        sys.exit(1)

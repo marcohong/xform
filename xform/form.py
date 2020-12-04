@@ -54,6 +54,8 @@ class FormMeta(type):
 class Form(FormABC, metaclass=FormMeta):
     def __init__(self, **kwargs: Any) -> None:
         for key, val in kwargs.items():
+            if hasattr(self, key):
+                raise ValueError('Key already exist.')
             setattr(self, key, val)
 
     def __getattr__(self, key: str):
@@ -130,7 +132,7 @@ class Form(FormABC, metaclass=FormMeta):
             list: 'list'
         }
         datas = []
-        for name, field in self.__fields__.items():
+        for _, field in self.__fields__.items():
             type_ = list if field.lst else (field.cvt_type or str)
             data = {
                 'field': field.data_key,
@@ -166,15 +168,12 @@ class SubmitForm:
     '''
 
     def __init__(self, **kwargs: Any):
-        self.__fields__ = {}
+        self.__fields__ = kwargs
         self.__form__ = None
-        for key, val in kwargs.items():
-            setattr(self, key, val)
-            self.__fields__[key] = val
 
     def __getattr__(self, key: str):
         try:
-            return self[key]
+            return self.__fields__[key]
         except KeyError:
             raise AttributeError(f'SubmitForm object has not attribute {key}.')
 
@@ -185,3 +184,7 @@ class SubmitForm:
             form = type('SubmitForm', (Form,), self.__fields__)
             self.__form__ = form()
         return self.__form__.bind(request, locations=locations)
+
+    def get_field_details(self) -> List[dict]:
+        assert self.__form__
+        return self.__form__.get_field_details()
