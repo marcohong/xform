@@ -16,7 +16,7 @@ usage::
 
 '''
 import types
-from typing import Any, Union
+from typing import Any, List, Union
 
 from . import FormABC
 from .fields import Field
@@ -115,6 +115,39 @@ class Form(FormABC, metaclass=FormMeta):
                 translate = _bind.translate
         data = DataBinding.dict_binding(self.__fields__, data)
         return self._bind(data, translate=translate)
+
+    def get_field_details(self) -> List[dict]:
+        '''
+        Return field details
+
+        :return: `<list>`
+        '''
+        tmap = {
+            str: 'str',
+            int: 'int',
+            float: 'float',
+            bool: 'bool',
+            list: 'list'
+        }
+        datas = []
+        for name, field in self.__fields__.items():
+            type_ = list if field.lst else (field.cvt_type or str)
+            data = {
+                'field': field.data_key,
+                'type': type_,
+                'type_str': tmap.get(type_, 'str'),
+                'required': field.required,
+                'length': field.length,
+                'default': field.default,
+                'description': field.description,
+                'when_field': field.when_field,
+                'when_value': field.when_value
+
+            }
+            if type_ in (int, float):
+                data.update({'min': field._min, 'max': field._max})
+            datas.append(data)
+        return datas
 
 
 class SubmitForm:
