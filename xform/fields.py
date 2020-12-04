@@ -12,7 +12,6 @@ from . import FormABC
 from .utils import json_loads
 from .messages import ErrMsg
 
-
 VALUE_TYPES = Union[str, int, float]
 ALL_TYPES = Union[str, int, float, bool, list, dict]
 
@@ -41,6 +40,7 @@ class Field(FieldABC):
                  err_msg: str = None,
                  when_field: str = None,
                  when_value: Any = None,
+                 description: str = None,
                  **kwargs: Any) -> None:
         '''
         :param data_key: `<str>` submit form parameters key, default field name
@@ -75,6 +75,7 @@ class Field(FieldABC):
                     validate=OneOf((1,2)))
                 address=fields.String(required=False,when_field='status',
                     when_value='2')
+        :param description: `<str>` field description
         :param kwargs: `<dict>` others params
         '''
         self.data_key = data_key
@@ -86,8 +87,12 @@ class Field(FieldABC):
         if when_field and not when_value:
             raise ValueError('when_value invalid')
         self.when_value = when_value
+        self.description = description
         self.kwargs = kwargs
-        self.null_values = (None, '',)
+        self.null_values = (
+            None,
+            '',
+        )
         self._value_is_null = False
         if validate is None:
             self.validators = []
@@ -169,8 +174,7 @@ class Field(FieldABC):
                             value: ALL_TYPES,
                             attr: str,
                             data: dict,
-                            translate: callable = None
-                            ) -> 'Field':
+                            translate: callable = None) -> 'Field':
         '''
         Start running validate.
 
@@ -220,9 +224,7 @@ class Field(FieldABC):
                 return self
         return await self._abc_validate(value, attr, data)
 
-    async def _abc_validate(self,
-                            value: dict,
-                            attr: str,
+    async def _abc_validate(self, value: dict, attr: str,
                             data: dict) -> 'Field':
         if self.required is False and self._value_is_null:
             self.get_defalut_value()
@@ -256,9 +258,7 @@ class Field(FieldABC):
                 if value is None or \
                         not (self.length[0] <= len(value) <= self.length[1]):
                     _msg = ErrMsg.get_message('default_length')
-                    self.set_error('length',
-                                   _msg,
-                                   self.length[0],
+                    self.set_error('length', _msg, self.length[0],
                                    self.length[1])
                     return False
             elif isinstance(self.length, int):
@@ -270,9 +270,7 @@ class Field(FieldABC):
                 return False
         return True
 
-    async def _validate(self,
-                        value: VALUE_TYPES,
-                        attr: str,
+    async def _validate(self, value: VALUE_TYPES, attr: str,
                         data: dict) -> Optional[Any]:
         '''
         User-defined validation function.
@@ -284,7 +282,8 @@ class Field(FieldABC):
     async def _validator(self, value: VALUE_TYPES) -> None:
         for validate in self.validators:
             try:
-                if self.cvt_type and value is not None:
+                if self.cvt_type and value is not None \
+                        and not isinstance(value, self.cvt_type):
                     try:
                         value = self.cvt_type(value)
                     except ValueError:
@@ -293,8 +292,8 @@ class Field(FieldABC):
                 if isinstance(ret, types.CoroutineType):
                     await ret
                 if not isinstance(validate, Validator) and ret is False:
-                    self.set_error(
-                        'invalid', ErrMsg.get_message('default_failed'))
+                    self.set_error('invalid',
+                                   ErrMsg.get_message('default_failed'))
             except ValidationError as verr:
                 self.value = None
                 if self.required is True:
@@ -324,14 +323,13 @@ class Number(Field):
 
     def get_value(self):
         if self.is_valid:
-            if self.value not in self.null_values and self.cvt_type:
+            if self.value not in self.null_values and self.cvt_type \
+                    and not isinstance(self.value, self.cvt_type):
                 return self.cvt_type(self.value)
             return self.value
         return self.default
 
-    async def _validate(self,
-                        value: VALUE_TYPES,
-                        attr: str,
+    async def _validate(self, value: VALUE_TYPES, attr: str,
                         data: dict) -> Optional[int]:
         if isinstance(value, bool):
             return self.default
@@ -351,9 +349,8 @@ class Number(Field):
                     return self.default
             return value
 
-    def _compare_value(self,
-                       value: VALUE_TYPES,
-                       cval: Union[int, float]) -> bool:
+    def _compare_value(self, value: VALUE_TYPES, cval: Union[int,
+                                                             float]) -> bool:
         _val = int(value) if value.isdigit() else float(value)
         return _val >= cval
 
@@ -363,10 +360,7 @@ class Integer(Number):
     regex = r'^0$|^[-1-9]\d*$'
     cvt_type = int
 
-    def __init__(self,
-                 *,
-                 _min: Union[int, float] = 0,
-                 **kwargs: Any):
+    def __init__(self, *, _min: Union[int, float] = 0, **kwargs: Any):
         kwargs.update({'_min': _min})
         super().__init__(**kwargs)
 
@@ -385,7 +379,7 @@ class Str(Field):
 
     def get_value(self):
         if self.is_valid and self.value is not None:
-            if self.cvt_type:
+            if self.cvt_type and not isinstance(self.value, self.cvt_type):
                 return self.cvt_type(self.value)
             return self.value
         return self.default
@@ -398,9 +392,7 @@ class EnStr(Str):
     lower = r'^[a-z]+$'
     en_str = r'^[a-zA-Z0-9_!$@.#*&~^\\-]+$'
     letters_digit = r'^\w+$'
-    err_msg = {
-        'invalid': ErrMsg.get_message('default_invalid')
-    }
+    err_msg = {'invalid': ErrMsg.get_message('default_invalid')}
 
     def __init__(self,
                  *,
@@ -411,9 +403,7 @@ class EnStr(Str):
         kwargs.update({'length': length})
         super().__init__(**kwargs)
 
-    async def _validate(self,
-                        value: VALUE_TYPES,
-                        attr: str,
+    async def _validate(self, value: VALUE_TYPES, attr: str,
                         data: dict) -> Optional[str]:
         ret = re.match(self.regex, value)
         if not ret:
@@ -427,10 +417,7 @@ class Raw(Field):
 class Nested(Field):
     err_msg = {'type': ErrMsg.get_message('invalid_type')}
 
-    def __init__(self,
-                 nested: Any,
-                 required: bool = False,
-                 **kwargs: Any):
+    def __init__(self, nested: Any, required: bool = False, **kwargs: Any):
         self.nested = nested
         kwargs.update({'required': required})
         super().__init__(**kwargs)
@@ -449,8 +436,7 @@ class Nested(Field):
                             value: Union[str, dict],
                             attr: str,
                             data: dict,
-                            translate: callable = None
-                            ) -> "Field":
+                            translate: callable = None) -> "Field":
         self.reset()
         self.locale = translate
         self.value = value
@@ -490,9 +476,7 @@ class List(Field):
         self._max_len = max_len or 0
         super().__init__(**kwargs)
 
-    async def _validate(self,
-                        value: list,
-                        attr: str,
+    async def _validate(self, value: list, attr: str,
                         data: dict) -> Optional[list]:
         if len(value) < self._min_len:
             self.set_error('too_less_error', None, self._min_len)
@@ -522,8 +506,10 @@ class IntList(List):
             if not self.cvt_type:
                 return self.value
             if isinstance(self.value, list):
-                data = [int(i) for i in self.value if
-                        isinstance(i, int) or i.isdigit()]
+                data = [
+                    int(i) for i in self.value
+                    if isinstance(i, int) or i.isdigit()
+                ]
             else:
                 data = [self.value] if self.value else []
             return list(set(data)) if self.dedup else data
@@ -531,11 +517,10 @@ class IntList(List):
 
 
 class Boolean(Field):
+    cvt_type = bool
     real = ('t', 'true', 'on', 'y', 'yes', '1', 1, True)
     fake = ('f', 'false', 'off', 'n', 'no', '0', 0, False)
-    err_msg = {
-        'invalid': ErrMsg.get_message('invalid_bool')
-    }
+    err_msg = {'invalid': ErrMsg.get_message('invalid_bool')}
 
     def __init__(self,
                  *,
@@ -548,9 +533,7 @@ class Boolean(Field):
             self.fake = tuple(set(fake))
         super().__init__(**kwargs)
 
-    async def _validate(self,
-                        value: VALUE_TYPES,
-                        attr: str,
+    async def _validate(self, value: VALUE_TYPES, attr: str,
                         data: dict) -> Optional[bool]:
         if not isinstance(value, (str, int, bool)):
             self.set_error('invalid')
@@ -569,9 +552,7 @@ class Timestamp(Integer):
         kwargs.update({'length': length})
         super().__init__(**kwargs)
 
-    async def _validate(self,
-                        value: VALUE_TYPES,
-                        attr: str,
+    async def _validate(self, value: VALUE_TYPES, attr: str,
                         data: dict) -> Optional[str]:
         try:
             if self.length >= 13 and len(str(value)) >= 13:
@@ -585,11 +566,10 @@ class Timestamp(Integer):
 
 
 class DateTime(Field):
-    err_msg = {
-        'invalid': ErrMsg.get_message('invalid_datetime')
-    }
+    err_msg = {'invalid': ErrMsg.get_message('invalid_datetime')}
 
-    def __init__(self, *,
+    def __init__(self,
+                 *,
                  fmt: str = '%Y-%m-%d %H:%M:%S',
                  convert: bool = False,
                  default: Union[callable, str] = None,
@@ -609,9 +589,7 @@ class DateTime(Field):
         except ValueError:
             return False
 
-    async def _validate(self,
-                        value: VALUE_TYPES,
-                        attr: str,
+    async def _validate(self, value: VALUE_TYPES, attr: str,
                         data: dict) -> Optional[str]:
         try:
             # valid value regex
@@ -627,9 +605,7 @@ class DateTime(Field):
 
 
 class Date(DateTime):
-    def __init__(self,
-                 fmt: str = '%Y-%m-%d',
-                 **kwargs: Any):
+    def __init__(self, fmt: str = '%Y-%m-%d', **kwargs: Any):
         kwargs.update({'fmt': fmt})
         super().__init__(**kwargs)
 
@@ -639,9 +615,7 @@ class StartDate(Date):
 
 
 class EndedDate(Date):
-    err_msg = {
-        'invalid': ErrMsg.get_message('invalid_start_date')
-    }
+    err_msg = {'invalid': ErrMsg.get_message('invalid_start_date')}
 
     def __init__(self, start_field: str, **kwargs: Any):
         self.start_field = start_field
@@ -653,9 +627,7 @@ class EndedDate(Date):
         except ValueError:
             return None
 
-    async def _validate(self,
-                        value: VALUE_TYPES,
-                        attr: str,
+    async def _validate(self, value: VALUE_TYPES, attr: str,
                         data: dict) -> Optional[str]:
         if not data.get(self.start_field):
             self.set_error('invalid')
@@ -668,13 +640,9 @@ class EndedDate(Date):
 
 
 class Time(Field):
-    err_msg = {
-        'invalid': ErrMsg.get_message('invalid_timestamp')
-    }
+    err_msg = {'invalid': ErrMsg.get_message('invalid_timestamp')}
 
-    async def _validate(self,
-                        value: VALUE_TYPES,
-                        attr: str,
+    async def _validate(self, value: VALUE_TYPES, attr: str,
                         data: dict) -> Optional[str]:
         if not value.isdigit():
             self.set_error('invalid', None, value)
@@ -689,9 +657,7 @@ class Time(Field):
 class Url(Str):
 
     default_schemes = {'http', 'https', 'ftp', 'ftps'}
-    err_msg = {
-        'invalid': ErrMsg.get_message('invalid_url')
-    }
+    err_msg = {'invalid': ErrMsg.get_message('invalid_url')}
 
     def __init__(self,
                  *,
@@ -704,9 +670,7 @@ class Url(Str):
         self.schemes = schemes or self.default_schemes
         super().__init__(**kwargs)
 
-    async def _validate(self,
-                        value: VALUE_TYPES,
-                        attr: str,
+    async def _validate(self, value: VALUE_TYPES, attr: str,
                         data: dict) -> Optional[str]:
         if '://' in value:
             scheme = value.split("://")[0].lower()
@@ -744,13 +708,9 @@ class Url(Str):
 
 class Email(Str):
     regex = r'^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$'
-    err_msg = {
-        'invalid': ErrMsg.get_message('invalid_email')
-    }
+    err_msg = {'invalid': ErrMsg.get_message('invalid_email')}
 
-    async def _validate(self,
-                        value: VALUE_TYPES,
-                        attr: str,
+    async def _validate(self, value: VALUE_TYPES, attr: str,
                         data: dict) -> Optional[str]:
         ret = re.match(self.regex, value)
         if not ret:
@@ -760,9 +720,7 @@ class Email(Str):
 class Phone(Number):
     regex = r'0?(13|14|15|16|17|18|19)[0-9]{9}'
     cvt_type = str
-    err_msg = {
-        'invalid': ErrMsg.get_message('invalid_phone')
-    }
+    err_msg = {'invalid': ErrMsg.get_message('invalid_phone')}
 
     def __init__(self, *, length: int = 11, **kwargs: Any):
         self._min = None
@@ -777,13 +735,9 @@ class IDCard(Str):
     len15 = (r"(?:1[1-5]|2[1-3]|3[1-7]|4[1-6]|5[0-4]|6[1-5])\d{4}"
              r"\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{3}")
 
-    err_msg = {
-        'invalid': ErrMsg.get_message('invalid_idcard')
-    }
+    err_msg = {'invalid': ErrMsg.get_message('invalid_idcard')}
 
-    async def _validate(self,
-                        value: VALUE_TYPES,
-                        attr: str,
+    async def _validate(self, value: VALUE_TYPES, attr: str,
                         data: dict) -> Optional[str]:
         ret = re.match(self.len18, value)
         ret2 = re.match(self.len15, value)
@@ -795,11 +749,10 @@ class IDCard(Str):
 
 class Username(Str):
     regex = r'^[a-zA-Z][a-zA-Z0-9_]{%d,%d}$'
-    err_msg = {
-        'invalid': ErrMsg.get_message('invalid_username')
-    }
+    err_msg = {'invalid': ErrMsg.get_message('invalid_username')}
 
-    def __init__(self, *,
+    def __init__(self,
+                 *,
                  regex: str = regex,
                  length: tuple = (3, 32),
                  **kwargs: Any):
@@ -807,9 +760,7 @@ class Username(Str):
         self._regex = regex
         super().__init__(**kwargs)
 
-    async def _validate(self,
-                        value: VALUE_TYPES,
-                        attr: str,
+    async def _validate(self, value: VALUE_TYPES, attr: str,
                         data: dict) -> Optional[str]:
         if isinstance(self.length, int):
             length = (self.length - 1, self.length - 1)
@@ -822,9 +773,7 @@ class Username(Str):
 
 class Password(Str):
     regex = r'^([a-zA-Z0-9_!=$@.#*&~^]){%d,%d}$'
-    err_msg = {
-        'invalid': ErrMsg.get_message('invalid_password')
-    }
+    err_msg = {'invalid': ErrMsg.get_message('invalid_password')}
 
     def __init__(self,
                  *,
@@ -836,9 +785,7 @@ class Password(Str):
         self._regex = regex
         super().__init__(**kwargs)
 
-    async def _validate(self,
-                        value: VALUE_TYPES,
-                        attr: str,
+    async def _validate(self, value: VALUE_TYPES, attr: str,
                         data: dict) -> Optional[str]:
         ret = re.match(self._regex % self._length, value)
         if not ret:
@@ -859,9 +806,7 @@ class Order(Str):
         kwargs.update({'length': None})
         super().__init__(**kwargs)
 
-    async def _validate(self,
-                        value: VALUE_TYPES,
-                        attr: str,
+    async def _validate(self, value: VALUE_TYPES, attr: str,
                         data: dict) -> Optional[str]:
         _value = []
         _exist_key = {}
@@ -889,19 +834,13 @@ class IpAddr(Str):
     ipv4 = (r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.)"
             r"{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")
     ipv6 = r'^(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$'
-    err_msg = {
-        'invalid': ErrMsg.get_message('invalid_ip')
-    }
+    err_msg = {'invalid': ErrMsg.get_message('invalid_ip')}
 
-    def __init__(self, *,
-                 length: tuple = (8, 32),
-                 **kwargs: Any):
+    def __init__(self, *, length: tuple = (8, 32), **kwargs: Any):
         kwargs.update({'length': length})
         super().__init__(**kwargs)
 
-    async def _validate(self,
-                        value: VALUE_TYPES,
-                        attr: str,
+    async def _validate(self, value: VALUE_TYPES, attr: str,
                         data: dict) -> Optional[str]:
         ret = re.match(self.ipv4, value)
         ret2 = re.match(self.ipv6, value)
@@ -912,9 +851,7 @@ class IpAddr(Str):
 
 
 class Jsonify(Str):
-    err_msg = {
-        'invalid': ErrMsg.get_message('invalid_json')
-    }
+    err_msg = {'invalid': ErrMsg.get_message('invalid_json')}
 
     def __init__(self, **kwargs: Any):
         kwargs.update({'length': None})
@@ -925,9 +862,7 @@ class Jsonify(Str):
             return self.value
         return self.default
 
-    async def _validate(self,
-                        value: Union[str, dict],
-                        attr: str,
+    async def _validate(self, value: Union[str, dict], attr: str,
                         data: dict) -> Optional[dict]:
         try:
             if isinstance(value, dict):
