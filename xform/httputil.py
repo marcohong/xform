@@ -1,13 +1,15 @@
 import threading
+import abc
 from typing import Any, Optional
 
 __all__ = ['BaseRequest', 'TornadoRequest', 'HttpRequest']
 
 
-class BaseRequest:
+class BaseRequest(metaclass=abc.ABCMeta):
     def __init__(self, request) -> None:
         self.request = request
 
+    @abc.abstractmethod
     def get_argument(self,
                      name: str,
                      default: Any = None) -> Optional[str]:
@@ -18,8 +20,8 @@ class BaseRequest:
         :param default: `<str>`
         :return: `<str>`
         '''
-        raise NotImplementedError
 
+    @abc.abstractmethod
     def get_arguments(self, name: str) -> Optional[list]:
         '''
         Get params from submit form.
@@ -27,8 +29,8 @@ class BaseRequest:
         :param name: `<str>`
         :return: `<list>`
         '''
-        raise NotImplementedError
 
+    @abc.abstractmethod
     def get_query_argument(self,
                            name: str,
                            default: Any = None) -> Optional[str]:
@@ -39,8 +41,8 @@ class BaseRequest:
         :param default: `<str>`
         :return: `<str>`
         '''
-        raise NotImplementedError
 
+    @abc.abstractmethod
     def get_query_arguments(self, name: str) -> Optional[list]:
         '''
         Get params from query string.
@@ -48,8 +50,8 @@ class BaseRequest:
         :param name: `<str>`
         :return: `<list>`
         '''
-        raise NotImplementedError
 
+    @abc.abstractmethod
     def get_from_header(self, name: str, default: Any = None) -> Optional[str]:
         '''
         Get param from headers.
@@ -58,8 +60,8 @@ class BaseRequest:
         :param default: `<str>`
         :return: `<str>`
         '''
-        raise NotImplementedError
 
+    @abc.abstractmethod
     def get_from_cookie(self, name: str, default: Any = None) -> Optional[str]:
         '''
         Get param from cookies.
@@ -68,15 +70,14 @@ class BaseRequest:
         :param default: `<str>`
         :return: `<str>`
         '''
-        raise NotImplementedError
 
+    @abc.abstractmethod
     def get_body(self) -> Optional[str]:
         '''
         Get request body.
 
         :return: `<str>`
         '''
-        raise NotImplementedError
 
     def translate(self, message: str) -> str:
         '''
