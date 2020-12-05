@@ -164,7 +164,7 @@ class DataBinding:
 
     def _auto_configure(self) -> None:
         kwds = self._base_kwargs()
-        content_type = self.request.get_from_header('Content-Type', '')
+        content_type = self.request.get_from_header('Content-Type', '').lower()
         _method = self.request.get_request_method()
         if _method.upper() == 'GET' and not content_type:
             self.content = QueryContent(**kwds)

@@ -1,20 +1,3 @@
-'''
-Form submission verification class.
-
-usage::
-
-    class UserForm(Form):
-        id = Integer(required=True)
-        name = Field(required=True, length=(1, 3))
-        age = Field(required=True)
-        sex = Field(validate=OneOf(('man', 'women')))
-
-    user = UserForm()
-    datas, errors = await user.bind(self.request)
-    print(errors)
-    print(datas)
-
-'''
 import types
 from typing import Any, List, Union
 
@@ -52,6 +35,23 @@ class FormMeta(type):
 
 
 class Form(FormABC, metaclass=FormMeta):
+    '''
+    Base form.
+
+    usage::
+
+        class UserForm(Form):
+            id = Integer(required=True)
+            name = Field(required=True, length=(1, 3))
+            age = Field(required=True)
+            sex = Field(validate=OneOf(('man', 'women')))
+
+        user = UserForm()
+        datas, errors = await user.bind(self.request)
+        print(errors)
+        print(datas)
+    '''
+
     def __init__(self, **kwargs: Any) -> None:
         for key, val in kwargs.items():
             if hasattr(self, key):
