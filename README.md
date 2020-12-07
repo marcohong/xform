@@ -210,7 +210,8 @@ class TornadoRequest(BaseRequest):
     # 详细实现请参考xform.httputil.TornadoRequest
 
 # 启动web服务前设置一下xform的request代理(不设置默认Tornado)，以Tornado为例
-from xform.httputil import TornadoRequest, HttpRequest
+from xform.httputil import HttpRequest
+from xfrom.adapters.tornado import TornadoRequest
 HttpRequest.configure().set_request_proxy(TornadoRequest)
 ```
 
