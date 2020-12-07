@@ -1,6 +1,4 @@
 import threading
-import abc
-from typing import Any, Optional
 
 from xform.adapters import BaseRequest
 from xform.adapters.tornado import TornadoRequest
@@ -14,11 +12,11 @@ class HttpRequest:
     _request: BaseRequest = None
 
     @classmethod
-    def configure(cls, *args, **kwargs) -> 'HttpRequest':
+    def configure(cls) -> 'HttpRequest':
         if not hasattr(HttpRequest, '_instance'):
             with HttpRequest._instance_lock:
                 if not hasattr(HttpRequest, '_instance'):
-                    HttpRequest._instance = HttpRequest(*args, **kwargs)
+                    HttpRequest._instance = HttpRequest()
         return HttpRequest._instance
 
     def set_request_proxy(self, request: BaseRequest):
