@@ -9,7 +9,7 @@ setup(
     license='MIT',
     url='https://github.com/marcohong/xform',
     keywords=['Form data validation', 'Form Data Binding', 'Web framework'],
-    packages=['xform'],
+    packages=['xform', 'xform/adapters'],
     python_requires='>=3.6',
     classifiers=[
         'Development Status :: 4 - Beta',
