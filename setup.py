@@ -2,11 +2,12 @@ from setuptools import setup
 
 setup(
     name='xform',
-    version='0.1.1',
+    version='0.2.1',
     description='Binding form data validation framework.',
     author='Maco',
     author_email='macohong@hotmail.com',
-    license='MIT',
+    zip_safe=False,
+    license='MIT License',
     url='https://github.com/marcohong/xform',
     keywords=['Form data validation', 'Form Data Binding', 'Web framework'],
     packages=['xform', 'xform/adapters'],
