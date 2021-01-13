@@ -1,5 +1,5 @@
 import types
-from typing import Any, List, Union
+from typing import Any, Awaitable, List, Union
 
 from . import FormABC
 from .fields import Field
@@ -82,9 +82,9 @@ class Form(FormABC, metaclass=FormMeta):
             _datas[name] = validate.get_value()
         return _datas, _errors
 
-    def bind(self,
-             request: _REQUEST,
-             locations: Union[tuple, str] = None) -> tuple:
+    async def bind(self,
+                   request: _REQUEST,
+                   locations: Union[tuple, str] = None) -> Awaitable[tuple]:
         '''Bind data from request.
 
         Bind data and check the accuracy of data.
@@ -96,7 +96,10 @@ class Form(FormABC, metaclass=FormMeta):
         _bind = DataBinding(request,
                             self.__fields__,
                             locations=locations)
-        return self._bind(_bind.bind(), translate=_bind.translate)
+        data = _bind.bind()
+        if isinstance(data, types.CoroutineType):
+            data = await data
+        return await self._bind(data, translate=_bind.translate)
 
     def dict_bind(self,
                   data: dict,
@@ -179,7 +182,7 @@ class SubmitForm:
 
     def bind(self,
              request: _REQUEST,
-             locations: Union[str, tuple] = None) -> tuple:
+             locations: Union[str, tuple] = None) -> Awaitable[tuple]:
         if not self.__form__:
             form = type('SubmitForm', (Form,), self.__fields__)
             self.__form__ = form()

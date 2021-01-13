@@ -4,6 +4,7 @@ Binding request datas.
 See the DataBinding class for more information.
 
 '''
+import types
 from typing import Union, Optional
 
 from .httputil import HttpRequest, BaseRequest
@@ -30,6 +31,10 @@ class Content:
         self.req = req
         self.fields = fields
 
+    @staticmethod
+    def is_coroutine(value):
+        return isinstance(value, types.CoroutineType)
+
     def name(self) -> str:
         return 'form'
 
@@ -46,12 +51,15 @@ class JsonContent(Content):
     def name(self) -> str:
         return 'json'
 
-    def binding(self) -> Optional[dict]:
+    async def binding(self) -> Optional[dict]:
         '''
         :return: `<dict>` name:value
         '''
         try:
-            data = json_loads(self.req.get_body())
+            value = self.req.get_body()
+            if self.is_coroutine(value):
+                value = await value
+            data = json_loads(value)
         except (JsonDecodeError, ValueError):
             data = None
         return data
@@ -67,7 +75,7 @@ class FormContent(Content):
     def name(self) -> str:
         return 'form'
 
-    def binding(self) -> Optional[dict]:
+    async def binding(self) -> Optional[dict]:
         '''
         :return: `<dict>` name:value
         '''
@@ -77,6 +85,8 @@ class FormContent(Content):
                 value = self.req.get_argument(field.data_key, default=None)
             else:
                 value = self.req.get_arguments(field.data_key)
+            if self.is_coroutine(value):
+                value = await value
             datas[name] = value
         return datas
 
@@ -86,7 +96,7 @@ class QueryContent(Content):
     def name(self) -> str:
         return 'query'
 
-    def binding(self) -> Optional[dict]:
+    async def binding(self) -> Optional[dict]:
         '''
         :return: `<dict>` name:value
         '''
@@ -97,6 +107,8 @@ class QueryContent(Content):
                                                     default=None)
             else:
                 value = self.req.get_query_arguments(field.data_key)
+            if self.is_coroutine(value):
+                value = await value
             datas[name] = value
         return datas
 
@@ -105,7 +117,7 @@ class CookiesContent(Content):
     def name(self) -> str:
         return 'cookies'
 
-    def binding(self) -> Optional[dict]:
+    async def binding(self) -> Optional[dict]:
         '''
         :return: `<dict>` name:value
         '''
@@ -116,6 +128,8 @@ class CookiesContent(Content):
                 value = cget(field.data_key)
             else:
                 value = [cget(field.data_key)]
+            if self.is_coroutine(value):
+                value = await value
             datas[name] = value
         return datas
 
@@ -124,7 +138,7 @@ class HeadersContent(Content):
     def name(self) -> str:
         return 'headers'
 
-    def binding(self) -> Optional[dict]:
+    async def binding(self) -> Optional[dict]:
         '''
         :return: `<dict>` name:value
         '''
@@ -135,6 +149,8 @@ class HeadersContent(Content):
                 value = hget(field.data_key)
             else:
                 value = [hget(field.data_key)]
+            if self.is_coroutine(value):
+                value = await value
             datas[name] = value
         return datas
 
