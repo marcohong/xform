@@ -1,11 +1,11 @@
 #### xform
-表单数据绑定验证框架，默认支持Tornado，可扩展支持flask或其它的python web框架
+表单数据绑定验证框架，默认支持Tornado和aiohttp，可扩展支持flask或其它的python web框架
 
 ------
 
 #### 使用
 
-Python requires >= 3.6
+Python requires >= 3.6，如果使用aiohttp(>=3.6.0)，那么Python>=3.7
 
 ```python
 # Tornado >= 6.0.0
@@ -211,7 +211,7 @@ class TornadoRequest(BaseRequest):
 
 # 启动web服务前设置一下xform的request代理(不设置默认Tornado)，以Tornado为例
 from xform.httputil import HttpRequest
-from xfrom.adapters.tornado import TornadoRequest
+from xform.adapters.tornado import TornadoRequest
 HttpRequest.configure().set_request_proxy(TornadoRequest)
 ```
 
