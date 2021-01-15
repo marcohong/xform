@@ -18,8 +18,6 @@ define('port', default=8888, help='run on the given port', type=int)
 class UserSchema(schema.Schema):
     uid = fields.Integer(required=True)
     name = fields.Username(required=True, length=(4, 20))
-    roles = fields.IntList(required=False)
-    remark = fields.Str()
 
 
 def get_now_date() -> str:
@@ -35,19 +33,27 @@ class MainHandler(tornado.web.RequestHandler):
         status=fields.Integer(required=True, validate=OneOf((1, 2))),
         stime=fields.StartDate(required=False, default=get_now_date),
         etime=fields.EndedDate('stime', default=get_now_date),
-        order=fields.Jsonify(required=False),
         user=fields.Nested(UserSchema, required=False),
         ids=fields.IntList(min_len=0, max_len=3, required=False,
                            when_field='test', when_value=fields.Boolean.real)
     )
 
-    async def post(self):
-        # locations: if used Schema, only support json data.
+    async def validate(self):
         data, error = await self.form.bind(self)
+        # print(self.form.get_field_details())
         if error:
-            ret = dict(code=0, state='FAIL', errors=error)
+            ret = dict(code=0, state='FAIL', error=error)
         else:
             ret = dict(code=1, state='SUCCESS', data=data)
+        return ret
+
+    async def post(self):
+        # locations: if used Schema, only support json data.
+        ret = await self.validate()
+        self.write(json.dumps(ret))
+
+    async def get(self):
+        ret = await self.validate()
         self.write(json.dumps(ret))
 
 
@@ -64,5 +70,4 @@ if __name__ == "__main__":
     try:
         app()
     except KeyboardInterrupt:
-        print('KeyboardInterrupt, exit.')
         sys.exit(1)
