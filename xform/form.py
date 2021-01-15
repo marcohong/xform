@@ -2,7 +2,7 @@ import types
 from typing import Any, Awaitable, List, Union
 
 from . import FormABC
-from .fields import Field
+from .fields import Field, Nested
 from .binding import DataBinding
 
 __all__ = ['Form', 'SubmitForm']
@@ -13,6 +13,14 @@ e.g:
     Tornado: tornado.web.RequestHandler
 '''
 _REQUEST = 'Request'
+
+FORM_TYPE_MAPS = {
+    str: 'str',
+    int: 'int',
+    float: 'float',
+    bool: 'bool',
+    list: 'list'
+}
 
 
 class FormMeta(type):
@@ -121,37 +129,45 @@ class Form(FormABC, metaclass=FormMeta):
         data = DataBinding.dict_binding(self.__fields__, data)
         return self._bind(data, translate=translate)
 
+    def _fmt_detail(self, field: Field):
+        type_ = list if field.lst else (field.cvt_type or str)
+        data = {
+            'field': field.data_key,
+            'type': type_,
+            'type_str': FORM_TYPE_MAPS.get(type_, 'str'),
+            'required': field.required,
+            'length': field.length,
+            'default': field.default,
+            'description': field.description,
+            'when_field': field.when_field,
+            'when_value': field.when_value
+
+        }
+        if type_ in (int, float):
+            data.update({'min': field._min, 'max': field._max})
+        return data
+
+    def _get_nested_details(self, nested):
+        datas = []
+        for k, v in nested.schema.__fields__.items():
+            if isinstance(v, Nested):
+                datas.extend(self._get_nested_details(v))
+            else:
+                datas.append(self._fmt_detail(v))
+        return datas
+
     def get_field_details(self) -> List[dict]:
         '''
         Return field details
 
         :return: `<list>`
         '''
-        tmap = {
-            str: 'str',
-            int: 'int',
-            float: 'float',
-            bool: 'bool',
-            list: 'list'
-        }
         datas = []
         for _, field in self.__fields__.items():
-            type_ = list if field.lst else (field.cvt_type or str)
-            data = {
-                'field': field.data_key,
-                'type': type_,
-                'type_str': tmap.get(type_, 'str'),
-                'required': field.required,
-                'length': field.length,
-                'default': field.default,
-                'description': field.description,
-                'when_field': field.when_field,
-                'when_value': field.when_value
-
-            }
-            if type_ in (int, float):
-                data.update({'min': field._min, 'max': field._max})
-            datas.append(data)
+            if isinstance(field, Nested):
+                datas.extend(self._get_nested_details(field))
+            else:
+                datas.append(self._fmt_detail(field))
         return datas
 
 
