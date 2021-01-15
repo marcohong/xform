@@ -3,7 +3,7 @@ from xform.httputil import HttpRequest
 from xform.adapters.aiohttp import AioHttpRequest
 from xform.form import SubmitForm
 from xform import fields
-HttpRequest.configure().set_request_proxy(AioHttpRequest)
+HttpRequest.configure(request_proxy=AioHttpRequest)
 
 
 form = SubmitForm(
@@ -22,4 +22,4 @@ app = web.Application()
 app.add_routes([web.get('/', handle), web.post('/', handle)])
 
 if __name__ == '__main__':
-    web.run_app(app, port=8899)
+    web.run_app(app, port=8888)
