@@ -14,7 +14,7 @@ class SanicRequest(BaseRequest):
 
     def get_arguments(self,
                       name: str) -> Optional[list]:
-        return self.request.form.getlist(name)
+        return self.request.form.getlist(name, [])
 
     def get_query_argument(self,
                            name: str,
@@ -23,7 +23,7 @@ class SanicRequest(BaseRequest):
 
     def get_query_arguments(self,
                             name: str) -> Optional[list]:
-        return self.request.args.getlist(name)
+        return self.request.args.getlist(name, [])
 
     def get_from_header(self,
                         name: str,
