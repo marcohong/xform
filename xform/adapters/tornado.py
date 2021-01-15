@@ -32,7 +32,7 @@ class TornadoRequest(BaseRequest):
     def get_from_cookie(self,
                         name: str,
                         default: Any = None) -> Optional[str]:
-        return self.request.request.get_cookie(name, default=default)
+        return self.request.get_cookie(name, default=default)
 
     def get_body(self) -> Optional[str]:
         return self.request.request.body
