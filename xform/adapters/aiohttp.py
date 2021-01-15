@@ -7,17 +7,19 @@ class AioHttpRequest(BaseRequest):
         super().__init__(request)
         self._post = None
 
+    async def post(self):
+        if self._post is None:
+            self._post = await self.request.post()
+
     async def get_argument(self,
                            name: str,
                            default: Any = None) -> Optional[str]:
-        if self._post is None:
-            self._post = await self.request.post()
+        await self.post()
         return self._post.getone(name, default)
 
     async def get_arguments(self,
                             name: str) -> Optional[list]:
-        if self._post is None:
-            self._post = await self.request.post()
+        await self.post()
         return self._post.getall(name)
 
     def get_query_argument(self,
