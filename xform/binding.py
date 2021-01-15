@@ -5,10 +5,11 @@ See the DataBinding class for more information.
 
 '''
 import types
-from typing import Union, Optional
+from typing import Awaitable, Optional, Union
 
 from .httputil import HttpRequest, BaseRequest
 from .utils import AttrDict, JsonDecodeError, json_loads
+from .fields import Nested
 
 # Content-Type
 IEME = AttrDict(
@@ -26,7 +27,7 @@ class Content:
     def __init__(self, req: BaseRequest, fields: dict) -> None:
         '''
         :param req: `<BaseRequest>` tornado/flask... request
-        :param fields: `<dict>` {name:field_class/regular}
+        :param fields: `<dict>` {data_key:field_class/regular}
         '''
         self.req = req
         self.fields = fields
@@ -65,94 +66,138 @@ class JsonContent(Content):
         return data
 
 
-class FormContent(Content):
+class _KVContent(Content):
+    def __init__(self, req: BaseRequest, fields: dict):
+        super().__init__(req, fields)
+        self.get_arg = None
+        self.get_args = None
+        self.initialize()
+
+    def initialize(self):
+        pass
+
+    async def _get_nested(self, parent: str, nested: Nested):
+        data = {}
+        for name, field in nested.schema.__fields__.items():
+            if isinstance(field, Nested):
+                return self._get_nested(field.data_key, field)
+            if isinstance(field, str) or field.lst is False:
+                value = self.get_arg(
+                    f'{parent}.{field.data_key}', default=None)
+            else:
+                value = self.get_args(f'{parent}.{field.data_key}')
+            if self.is_coroutine(value):
+                value = await value
+            data[name] = value
+        return data
+
+    async def _binding(self) -> Optional[dict]:
+        '''
+        :return: `<dict>` name:value
+        '''
+        data = {}
+        for name, field in self.fields.items():
+            if isinstance(field, Nested):
+                data[name] = await self._get_nested(field.data_key, field)
+                continue
+            if isinstance(field, str) or field.lst is False:
+                value = self.get_arg(field.data_key, default=None)
+            else:
+                value = self.get_args(field.data_key)
+            if self.is_coroutine(value):
+                value = await value
+            data[name] = value
+        return data
+
+    def binding(self) -> Awaitable[Optional[dict]]:
+        '''
+        :return: `<dict>` name:value
+        '''
+
+        return self._binding()
+
+
+class FormContent(_KVContent):
     '''
     Accept: text/html
     Content-Type: application/x-www-form-urlencoded(form submit)
     Content-Type: multipart/form-data(file upload)
     '''
 
+    def initialize(self):
+        self.get_arg = self.req.get_argument
+        self.get_args = self.req.get_arguments
+
     def name(self) -> str:
         return 'form'
 
-    async def binding(self) -> Optional[dict]:
-        '''
-        :return: `<dict>` name:value
-        '''
-        datas = {}
-        for name, field in self.fields.items():
-            if isinstance(field, str) or field.lst is False:
-                value = self.req.get_argument(field.data_key, default=None)
-            else:
-                value = self.req.get_arguments(field.data_key)
-            if self.is_coroutine(value):
-                value = await value
-            datas[name] = value
-        return datas
 
+class QueryContent(_KVContent):
 
-class QueryContent(Content):
+    def initialize(self):
+        self.get_arg = self.req.get_query_argument
+        self.get_args = self.req.get_query_arguments
 
     def name(self) -> str:
         return 'query'
 
-    async def binding(self) -> Optional[dict]:
+
+class _CHContent(_KVContent):
+    async def _get_nested(self, parent: str, nested: Nested):
+        data = {}
+        for name, field in nested.schema.__fields__.items():
+            if isinstance(field, Nested):
+                return self._get_nested(field.data_key, field)
+            if isinstance(field, str) or field.lst is False:
+                value = self.get_arg(f'{parent}.{field.data_key}')
+            else:
+                value = [self.get_arg(f'{parent}.{field.data_key}')]
+            if self.is_coroutine(value):
+                value = await value
+            data[name] = value
+        return data
+
+    async def _binding(self) -> Optional[dict]:
         '''
         :return: `<dict>` name:value
         '''
-        datas = {}
+        data = {}
         for name, field in self.fields.items():
+            if isinstance(field, Nested):
+                data[name] = await self._get_nested(field.data_key, field)
+                continue
             if isinstance(field, str) or field.lst is False:
-                value = self.req.get_query_argument(field.data_key,
-                                                    default=None)
+                value = self.get_arg(field.data_key)
             else:
-                value = self.req.get_query_arguments(field.data_key)
+                value = [self.get_arg(field.data_key)]
             if self.is_coroutine(value):
                 value = await value
-            datas[name] = value
-        return datas
+            data[name] = value
+        return data
+
+    def binding(self) -> Awaitable[Optional[dict]]:
+        '''
+        :return: `<dict>` name:value
+        '''
+
+        return self._binding()
 
 
-class CookiesContent(Content):
+class CookiesContent(_CHContent):
+
+    def initialize(self):
+        self.get_arg = self.req.get_from_cookie
+
     def name(self) -> str:
         return 'cookies'
 
-    async def binding(self) -> Optional[dict]:
-        '''
-        :return: `<dict>` name:value
-        '''
-        datas = {}
-        cget = self.req.get_from_cookie
-        for name, field in self.fields.items():
-            if isinstance(field, str) or field.lst is False:
-                value = cget(field.data_key)
-            else:
-                value = [cget(field.data_key)]
-            if self.is_coroutine(value):
-                value = await value
-            datas[name] = value
-        return datas
 
+class HeadersContent(_CHContent):
+    def initialize(self):
+        self.get_arg = self.req.get_from_header
 
-class HeadersContent(Content):
     def name(self) -> str:
         return 'headers'
-
-    async def binding(self) -> Optional[dict]:
-        '''
-        :return: `<dict>` name:value
-        '''
-        datas = {}
-        hget = self.req.get_from_header
-        for name, field in self.fields.items():
-            if isinstance(field, str) or field.lst is False:
-                value = hget(field.data_key)
-            else:
-                value = [hget(field.data_key)]
-            if self.is_coroutine(value):
-                value = await value
-            datas[name] = value
-        return datas
 
 
 LOCATIONS = dict(json=JsonContent,
