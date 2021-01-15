@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='xform',
-    version='0.2.1',
+    version='0.3.0',
     description='Binding form data validation framework.',
     author='Maco',
     author_email='macohong@hotmail.com',
@@ -12,6 +12,7 @@ setup(
     keywords=['Form data validation', 'Form Data Binding', 'Web framework'],
     packages=['xform', 'xform/adapters'],
     python_requires='>=3.6',
+    install_requires=['multidict', 'attrs'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
