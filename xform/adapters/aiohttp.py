@@ -20,7 +20,7 @@ class AioHttpRequest(BaseRequest):
     async def get_arguments(self,
                             name: str) -> Optional[list]:
         await self.post()
-        return self._post.getall(name)
+        return self._post.getall(name, [])
 
     def get_query_argument(self,
                            name: str,
@@ -29,7 +29,7 @@ class AioHttpRequest(BaseRequest):
 
     def get_query_arguments(self,
                             name: str) -> Optional[list]:
-        return self.request.query.getall(name)
+        return self.request.query.getall(name, [])
 
     def get_from_header(self,
                         name: str,
