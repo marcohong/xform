@@ -449,11 +449,20 @@ class Nested(Field):
             data = json_loads(value) if isinstance(value, str) else value
         except (ValueError, AssertionError):
             self.set_error('invalid')
-        datas, errors = await self.schema.dict_bind(data, translate)
-        if errors:
-            self.error = errors
+        _data, error = await self.schema.dict_bind(data, translate)
+        if error:
+            if self.required:
+                self.error = error
+            else:
+                flag = False
+                for value in _data.values():
+                    if value is not None and not isinstance(value, dict):
+                        flag = True
+                        break
+                if flag:
+                    self.error = error
         else:
-            self.value = datas
+            self.value = _data
         return self
 
 
