@@ -1,5 +1,6 @@
 import sys
 import datetime
+import time
 import json
 import tornado.web
 import tornado.ioloop
@@ -13,6 +14,13 @@ from xform import schema
 from xform.validate import OneOf
 
 define('port', default=8888, help='run on the given port', type=int)
+
+
+'''
+test command
+curl http://localhost:8888?id=2\&status=1\&user.name=user1\&user.uid=100
+curl http://localhost:8888 -X POST -d "id=2&status=1&user.name=user&user.uid=9"
+'''
 
 
 class UserSchema(schema.Schema):
@@ -39,7 +47,9 @@ class MainHandler(tornado.web.RequestHandler):
     )
 
     async def validate(self):
+        start = time.time() * 1000000
         data, error = await self.form.bind(self)
+        print('total time:', time.time()*1000000 - start)
         # print(self.form.get_field_details())
         if error:
             ret = dict(code=0, state='FAIL', error=error)

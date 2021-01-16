@@ -5,10 +5,16 @@ from xform.form import SubmitForm
 from xform import fields
 HttpRequest.configure(request_proxy=AioHttpRequest)
 
+'''
+test command
+curl http://localhost:8888?id=2\&name=aiohttp
+curl http://localhost:8888 -X POST -d "id=2&name=aiohttp"
+'''
+
 
 form = SubmitForm(
     id=fields.Integer(required=True, _min=1),
-    name=fields.List(required=True, length=(3, 20)))
+    name=fields.Str(required=True, length=(3, 20)))
 
 
 async def handle(request):
