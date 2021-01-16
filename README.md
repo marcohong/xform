@@ -1,56 +1,65 @@
 #### xform
-表单数据绑定验证框架，默认支持Tornado和aiohttp，可扩展支持flask或其它的python web框架
+表单数据绑定验证框架，支持Tornado(默认)、aiohttp、sanic，可自行扩展支持其它的python web框架
 
 ------
 
-#### 使用
+#### 版本要求
 
-Python requires >= 3.6，如果使用aiohttp(>=3.6.0)，那么Python>=3.7
+------
+
+目前已支持的web框架
+
+| Web框架          | Python版本    | 备注                           |
+| ---------------- | ------------- | ------------------------------ |
+| Tornado >= 6.0.0 | python >= 3.6 |                                |
+| Aiohttp >= 3.6.0 | python >= 3.7 | aiohttp对python最低支持版本3.7 |
+| Sanic >= 19.3    | python >= 3.6 |                                |
+
+#### 使用示例
+
+------
+
+Tornado示例，更多demo请查看tests文件夹
 
 ```python
 # Tornado >= 6.0.0
+import json
 import tornado.web
 from xform import fields
-from xform.form import SubmitForm
 from xform import schema
-from xform.validate import OneOf
+from xform.form import SubmitForm
 
 class UserSchema(schema.Schema):
     uid = fields.Integer(required=True)
     name = fields.Username(required=True, length=(4, 20))
-    roles = fields.IntList(required=False)
-    remark = fields.Str()
-
-def get_now_date() -> str:
-    '''return date str'''
-    return datetime.datetime.now().strftime('%Y-%m-%d')
 
 class MainHandler(tornado.web.RequestHandler):
     # when_field 当表单某一个字段的值在when_value中定义 则强制变为必填(required=True)
+    # 如果表单提交类型的是json按照字典方式传值即可，否则使用user.uid=xxx方式传值
     form = SubmitForm(
-        id=fields.Integer(required=True, _min=2),
-        text=fields.EnStr(data_key='search', required=False),
-        test=fields.Boolean(required=False, default=True),
-        status=fields.Integer(required=True, validate=OneOf((1, 2))),
-        stime=fields.StartDate(required=False, default=get_now_date),
-        etime=fields.EndedDate('stime', default=get_now_date),
-        order=fields.Jsonify(required=False),
-        user=fields.Nested(UserSchema, required=False),
-        ids=fields.IntList(min_len=0, max_len=3, required=False,
-                           when_field='test', when_value=fields.Boolean.real)
+        id=fields.Integer(required=True, _min=1),
+        name=fields.Str(required=True),
+        user=fields.Nested(UserSchema, required=False)
     )
-
-    async def post(self):
+    
+    async def validate(self):
         '''
-        locations:如果使用了Schema，提交的数据必须是json
+        locations:获取数据方式仅限于指定的作用域，locations可以是str或者tuple
         作用域: form/json/query/headers/cookies，组合使用例如locations=('form','json')
         data, error = await self.form.bind(self, locations='json')
         '''
         data, error = await self.form.bind(self)
         if error:
-            ret = dict(code=0, state='FAIL', errors=error)
-        else:
-            ret = dict(code=1, state='SUCCESS', data=data)
+            return dict(code=0, state='FAIL', error=error)
+        return dict(code=1, state='SUCCESS', data=data)
+
+    async def post(self):
+        # locations: if used Schema, only support json data.
+        ret = await self.validate()
+        self.write(json.dumps(ret))
+
+    async def get(self):
+        ret = await self.validate()
         self.write(json.dumps(ret))
 ```
 
@@ -87,14 +96,19 @@ demo
 
 ```bash
 cd tests/
-python3 test_form.py
-# or running tornado
-python3 test_server.py &
-python3 test_client.py
+# test tornado
+python3 test_tornado.py
+# test aiohttp web
+python3 test_aiohttp.py
+# test sanic web
+python3 test_sanic.py
+...
 
 ```
 
-#### 扩展
+#### 扩展组件
+
+------
 
 ##### 自定义fields类型
 
@@ -207,11 +221,18 @@ class TornadoRequest(BaseRequest):
     def translate(self, message: str) -> str:
         return self.request.locale.translate(message)
     # ...实现BaseRequest里面的方法，
-    # 详细实现请参考xform.httputil.TornadoRequest
+    # 详细实现请参考xform.adapters.tornado.TornadoRequest
 
-# 启动web服务前设置一下xform的request代理(不设置默认Tornado)，以Tornado为例
+# 启动web服务前设置一下xform的request代理(不设置默认Tornado)，以aiohttp为例
 from xform.httputil import HttpRequest
-from xform.adapters.tornado import TornadoRequest
-HttpRequest.configure().set_request_proxy(TornadoRequest)
+from xform.adapters.aiohttp import AioHttpRequest
+HttpRequest.configure(request_proxy=AioHttpRequest)
+# Coding...
 ```
+
+#### License
+
+------
+
+`xfrom` is offered under the MIT license.
 

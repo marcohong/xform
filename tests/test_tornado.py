@@ -1,6 +1,5 @@
 import sys
 import datetime
-import time
 import json
 import tornado.web
 import tornado.ioloop
@@ -47,9 +46,7 @@ class MainHandler(tornado.web.RequestHandler):
     )
 
     async def validate(self):
-        start = time.time() * 1000000
         data, error = await self.form.bind(self)
-        print('total time:', time.time()*1000000 - start)
         # print(self.form.get_field_details())
         if error:
             ret = dict(code=0, state='FAIL', error=error)
