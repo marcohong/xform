@@ -1,6 +1,6 @@
 from typing import Any, Optional
 from . import BaseRequest
-from .utils import parse_content_type
+from xform.utils import parse_content_type
 
 
 class SanicRequest(BaseRequest):
