@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Any
 try:
     import ujson as json
@@ -5,6 +6,8 @@ try:
 except ImportError:
     import json
     JDecodeError = json.decoder.JSONDecodeError
+import attr
+from multidict import MultiDict, MultiDictProxy
 
 
 class JsonDecodeError(JDecodeError):
@@ -41,3 +44,27 @@ class AttrDict(dict):
 
     def __setattr__(self, key, value):
         self[key] = value
+
+
+@attr.s(auto_attribs=True, frozen=True, slots=True)
+class ContentType:
+    type: str
+    subtype: str
+    parameters: 'MultiDictProxy[str]'
+
+
+@lru_cache(50)
+def parse_content_type(ctype: str) -> str:
+    parts = ctype.split(';')
+    params = MultiDict()
+    for item in parts[1:]:
+        if not item:
+            continue
+        key, value = item.split('=', 1) if '=' in item else (item, '')
+        params.add(key.lower().strip(), value.strip(' "'))
+    fulltype = parts[0].strip().lower()
+    if fulltype == '*':
+        fulltype = '*/*'
+    mtype, stype = fulltype.split(
+        '/', 1) if '/' in fulltype else (fulltype, '')
+    return ContentType(type=mtype, subtype=stype, parameters=params)
