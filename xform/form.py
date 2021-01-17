@@ -68,27 +68,27 @@ class Form(FormABC, metaclass=FormMeta):
 
     def __getattr__(self, key: str):
         try:
-            return self[key]
+            return self.__fields__[key]
         except KeyError:
-            raise AttributeError(f'Form object has not attribute {key}.')
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{key}'")
 
     async def _bind(self,
                     data: dict,
                     translate: callable = None
-                    ) -> tuple:
-        _errors, _datas = {}, {}
-        data = data or {}
+                    ) -> Awaitable[tuple]:
+        ret, err, data = {}, {}, data or {}
         for name, field in self.__fields__.items():
-            value = data.get(name)
-            validate = await field._run_validate(value,
+            validate = await field._run_validate(data.get(name),
                                                  name,
                                                  data,
                                                  translate=translate)
             if not validate.is_valid:
-                _errors[field.data_key] = validate.error
-            setattr(self, name, validate.get_value())
-            _datas[name] = validate.get_value()
-        return _datas, _errors
+                err[field.data_key] = validate.error
+            else:
+                ret[name] = validate.get_value()
+            validate.reset()
+        return ret, err
 
     async def bind(self,
                    request: _REQUEST,
@@ -104,9 +104,7 @@ class Form(FormABC, metaclass=FormMeta):
         _bind = DataBinding(request,
                             self.__fields__,
                             locations=locations)
-        data = _bind.bind()
-        if isinstance(data, types.CoroutineType):
-            data = await data
+        data = await _bind.bind()
         return await self._bind(data, translate=_bind.translate)
 
     def dict_bind(self,
@@ -129,7 +127,7 @@ class Form(FormABC, metaclass=FormMeta):
         data = DataBinding.dict_binding(self.__fields__, data)
         return self._bind(data, translate=translate)
 
-    def _fmt_detail(self, field: Field):
+    def _fmt_detail(self, field: Field) -> dict:
         type_ = list if field.lst else (field.cvt_type or str)
         data = {
             'field': field.data_key,
@@ -147,7 +145,7 @@ class Form(FormABC, metaclass=FormMeta):
             data.update({'min': field._min, 'max': field._max})
         return data
 
-    def _get_nested_details(self, nested):
+    def _get_nested_details(self, nested: Nested) -> list:
         datas = []
         for k, v in nested.schema.__fields__.items():
             if isinstance(v, Nested):
@@ -194,7 +192,7 @@ class SubmitForm:
         try:
             return self.__fields__[key]
         except KeyError:
-            raise AttributeError(f'SubmitForm object has not attribute {key}.')
+            raise AttributeError(f'SubmitForm object has no attribute {key}')
 
     def bind(self,
              request: _REQUEST,
