@@ -5,7 +5,7 @@ See the DataBinding class for more information.
 
 '''
 import types
-from typing import Awaitable, Optional, Union
+from typing import Any, Awaitable, Optional, Union
 
 from .httputil import HttpRequest, BaseRequest
 from .utils import AttrDict, JsonDecodeError, json_loads
@@ -33,7 +33,7 @@ class Content:
         self.fields = fields
 
     @staticmethod
-    def is_coroutine(value):
+    def is_coroutine(value: Any) -> bool:
         return isinstance(value, types.CoroutineType)
 
     def name(self) -> str:
@@ -227,7 +227,7 @@ class DataBinding:
         kwds = self._base_kwargs()
         content_type = self.request.get_from_header('Content-Type', '').lower()
         _method = self.request.get_request_method()
-        if _method.upper() == 'GET' and not content_type:
+        if _method.upper() == 'GET':
             self.content = QueryContent(**kwds)
         elif IEME.MIME_JSON in content_type:
             self.content = JsonContent(**kwds)
@@ -237,7 +237,7 @@ class DataBinding:
         else:
             self.content = FormContent(**kwds)
 
-    def bind(self) -> Optional[dict]:
+    async def bind(self) -> Awaitable[Optional[dict]]:
         '''
         Data binding
 
@@ -245,13 +245,15 @@ class DataBinding:
         '''
         if not self.locations:
             self._auto_configure()
-            return self.content.binding()
+            return await self.content.binding()
 
         if isinstance(self.locations, str):
             self.locations = (self.locations,)
         for location in self.locations:
             self.content = LOCATIONS.get(location)(**self._base_kwargs())
             data = self.content.binding()
+            if data and Content.is_coroutine(data):
+                data = await data
             if data:
                 return data
         return None
