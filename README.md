@@ -15,6 +15,14 @@
 | Aiohttp >= 3.6.0 | python >= 3.7 | aiohttp对python最低支持版本3.7 |
 | Sanic >= 19.3    | python >= 3.6 |                                |
 
+#### 获取安装
+
+```bash
+pip3 install https://github.com/marcohong/xform/archive/v0.3.0.tar.gz
+# 或者使用最新版本
+pip3 install git+https://github.com/marcohong/tweb.git
+```
+
 #### 使用示例
 
 ------
@@ -25,9 +33,15 @@ Tornado示例，更多demo请查看tests文件夹
 # Tornado >= 6.0.0
 import json
 import tornado.web
+import tornado.ioloop
+import tornado.options
+import tornado.httpserver
+from tornado.options import define, options
 from xform import fields
 from xform import schema
 from xform.form import SubmitForm
+
+define('port', default=8888, help='run on the given port', type=int)
 
 class UserSchema(schema.Schema):
     uid = fields.Integer(required=True)
@@ -50,17 +64,24 @@ class MainHandler(tornado.web.RequestHandler):
         '''
         data, error = await self.form.bind(self)
         if error:
-            return dict(code=0, state='FAIL', error=error)
-        return dict(code=1, state='SUCCESS', data=data)
+            return self.write(json.dumps({'state':'FAIL', 'error':error})
+        return self.write(json.dumps({'state':'SUCCESS', 'data':data}))
 
     async def post(self):
         # locations: if used Schema, only support json data.
-        ret = await self.validate()
-        self.write(json.dumps(ret))
+        return await self.validate()
 
     async def get(self):
-        ret = await self.validate()
-        self.write(json.dumps(ret))
+        return await self.validate()
+ 
+if __name__ == "__main__":
+    tornado.options.parse_command_line()
+    application = tornado.web.Application([(r'/', MainHandler)])
+    http_server = tornado.httpserver.HTTPServer(application)
+    http_server.listen(options.port)
+    tornado.ioloop.IOLoop.current().start()
+
+# curl http://localhost:8888 -X POST -d "id=1&name=test&user.name=user&user.uid=2"
 ```
 
 自定义的提示(3种方式)
