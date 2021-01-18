@@ -1,4 +1,3 @@
-import asyncio
 import types
 from typing import Any, Awaitable, List, Union
 
@@ -62,13 +61,13 @@ class Form(FormABC, metaclass=FormMeta):
         print(datas)
     '''
 
-    def __init__(self):
-        self._lock = asyncio.Lock()
-
     def __getattr__(self, key: str):
         return self.__fields__[key]
 
-    async def _valid_fields(self, data: dict, translate: callable = None):
+    async def _bind(self,
+                    data: dict,
+                    translate: callable = None
+                    ) -> Awaitable[tuple]:
         ret, err, data = {}, {}, data or {}
         for name, field in self.__fields__.items():
             validate = await field._run_validate(data.get(name),
@@ -81,55 +80,30 @@ class Form(FormABC, metaclass=FormMeta):
                 ret[name] = validate.get_value()
         return ret, err
 
-    async def _bind(self,
-                    data: dict,
-                    translate: callable = None,
-                    with_lock: bool = False,
-                    ) -> Awaitable[tuple]:
-        if not with_lock:
-            return await self._valid_fields(data, translate)
-        async with self._lock:
-            return await self._valid_fields(data, translate)
-
     async def bind(self,
                    request: _REQUEST,
-                   locations: Union[tuple, str] = None,
-                   with_lock: bool = False) -> Awaitable[tuple]:
+                   locations: Union[tuple, str] = None) -> Awaitable[tuple]:
         '''Bind data from request.
 
         Bind data and check the accuracy of data.
 
         :param request: e.g: tornado.web.RequestHandler
         :param locations: `<uple/str>` form/json/query/headers/cookies
-        :param with_lock: `<bool>` validate data use asyncio.lock
-
-        ::note v0.3.1
-
-            Add with_lock parameters, default False.
 
         :return: `<tuple>` (data, error)
         '''
-        _bind = DataBinding(request,
-                            self.__fields__,
-                            locations=locations)
+        _bind = DataBinding(request, self.__fields__, locations=locations)
         data = await _bind.bind()
-        return await self._bind(data, translate=_bind.translate,
-                                with_lock=with_lock)
+        return await self._bind(data, translate=_bind.translate)
 
     def dict_bind(self,
                   data: dict,
-                  request: _REQUEST = None,
-                  with_lock: bool = False
+                  request: _REQUEST = None
                   ) -> Awaitable[tuple]:
         '''Check the accuracy of data.
 
         :param data: `<dict>`
         :param request: e.g: tornado.web.RequestHandler
-        :param with_lock: `<bool>` validate data use asyncio.lock
-
-        ::note v0.3.1
-
-            Add with_lock parameters, default False.
 
         :return: `<tuple>` (data, error)
         '''
@@ -140,8 +114,8 @@ class Form(FormABC, metaclass=FormMeta):
             else:
                 _bind = DataBinding(request, data)
                 translate = _bind.translate
-        data = DataBinding.dict_binding(self.__fields__, data)
-        return self._bind(data, translate=translate, with_lock=with_lock)
+        _data = DataBinding.dict_binding(self.__fields__, data)
+        return self._bind(_data, translate=translate)
 
     def _fmt_detail(self, field: Field) -> dict:
         type_ = list if field.lst else (field.cvt_type or str)
@@ -163,11 +137,11 @@ class Form(FormABC, metaclass=FormMeta):
 
     def _get_nested_details(self, nested: Nested) -> list:
         datas = []
-        for k, v in nested.schema.__fields__.items():
-            if isinstance(v, Nested):
-                datas.extend(self._get_nested_details(v))
+        for _, field in nested.schema.__fields__.items():
+            if isinstance(field, Nested):
+                datas.extend(self._get_nested_details(field))
             else:
-                datas.append(self._fmt_detail(v))
+                datas.append(self._fmt_detail(field))
         return datas
 
     def get_field_details(self) -> List[dict]:
@@ -223,25 +197,17 @@ class SubmitForm:
 
     def bind(self,
              request: _REQUEST,
-             locations: Union[str, tuple] = None,
-             with_lock: bool = True) -> Awaitable[tuple]:
+             locations: Union[str, tuple] = None) -> Awaitable[tuple]:
         '''Bind data from request.
 
         Bind data and check the accuracy of data.
 
         :param request: e.g: tornado.web.RequestHandler
         :param locations: `<uple/str>` form/json/query/headers/cookies
-        :param with_lock: `<bool>` validate data use asyncio.lock
-
-        ::note v0.3.1
-
-            Add with_lock parameters, default True, if you not want
-         to reuse SubmitForm, set with_lock=False.
 
         :return: `<tuple>` (data, error)
         '''
         if not self.__form__:
             form = type('SubmitForm', (Form,), self.__fields__)
             self.__form__ = form()
-        return self.__form__.bind(request, locations=locations,
-                                  with_lock=with_lock)
+        return self.__form__.bind(request, locations=locations)

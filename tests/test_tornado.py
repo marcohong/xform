@@ -34,7 +34,6 @@ def get_now_date() -> str:
 
 class MainHandler(tornado.web.RequestHandler):
     form = SubmitForm(
-        a='aa',
         id=fields.Integer(required=True, _min=2),
         text=fields.EnStr(data_key='search', required=False),
         test=fields.Boolean(required=False, default=True),
