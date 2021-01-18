@@ -5,11 +5,11 @@ See the DataBinding class for more information.
 
 '''
 import types
-from typing import Any, Awaitable, Optional, Union
+from typing import Any, Awaitable, Dict, Optional, Union
 
 from .httputil import HttpRequest, BaseRequest
 from .utils import AttrDict, JsonDecodeError, json_loads
-from .fields import Nested
+from .fields import Field, Nested
 
 # Content-Type
 IEME = AttrDict(
@@ -27,7 +27,7 @@ class Content:
     def __init__(self, req: BaseRequest, fields: dict) -> None:
         '''
         :param req: `<BaseRequest>` tornado/flask... request
-        :param fields: `<dict>` {data_key:field_class/regular}
+        :param fields: `<dict>` {data_key:field_class}
         '''
         self.req = req
         self.fields = fields
@@ -81,7 +81,7 @@ class _KVContent(Content):
         for name, field in nested.schema.__fields__.items():
             if isinstance(field, Nested):
                 return self._get_nested(field.data_key, field)
-            if isinstance(field, str) or field.lst is False:
+            if field.lst is False:
                 value = self.get_arg(
                     f'{parent}.{field.data_key}', default=None)
             else:
@@ -100,7 +100,7 @@ class _KVContent(Content):
             if isinstance(field, Nested):
                 data[name] = await self._get_nested(field.data_key, field)
                 continue
-            if isinstance(field, str) or field.lst is False:
+            if field.lst is False:
                 value = self.get_arg(field.data_key, default=None)
             else:
                 value = self.get_args(field.data_key)
@@ -148,7 +148,7 @@ class _CHContent(_KVContent):
         for name, field in nested.schema.__fields__.items():
             if isinstance(field, Nested):
                 return self._get_nested(field.data_key, field)
-            if isinstance(field, str) or field.lst is False:
+            if field.lst is False:
                 value = self.get_arg(f'{parent}.{field.data_key}')
             else:
                 value = [self.get_arg(f'{parent}.{field.data_key}')]
@@ -166,7 +166,7 @@ class _CHContent(_KVContent):
             if isinstance(field, Nested):
                 data[name] = await self._get_nested(field.data_key, field)
                 continue
-            if isinstance(field, str) or field.lst is False:
+            if field.lst is False:
                 value = self.get_arg(field.data_key)
             else:
                 value = [self.get_arg(field.data_key)]
@@ -211,7 +211,7 @@ class DataBinding:
 
     def __init__(self,
                  req: 'HttpRequest',
-                 fields: dict,
+                 fields: Dict[str, Field],
                  locations: Union[str, tuple] = None) -> None:
         self.req = req
         _http = HttpRequest.configure()
@@ -223,7 +223,7 @@ class DataBinding:
     def _base_kwargs(self) -> dict:
         return dict(req=self.request, fields=self.fields)
 
-    def _auto_configure(self) -> None:
+    def _auto_configure(self) -> Content:
         kwds = self._base_kwargs()
         content_type = self.request.get_from_header('Content-Type', '').lower()
         _method = self.request.get_request_method()
@@ -236,6 +236,7 @@ class DataBinding:
             self.content = FormContent(**kwds)
         else:
             self.content = FormContent(**kwds)
+        return self.content
 
     async def bind(self) -> Awaitable[Optional[dict]]:
         '''
@@ -244,8 +245,8 @@ class DataBinding:
         :return: `<dict>`
         '''
         if not self.locations:
-            self._auto_configure()
-            return await self.content.binding()
+            content = self._auto_configure()
+            return await content.binding()
 
         if isinstance(self.locations, str):
             self.locations = (self.locations,)
@@ -259,15 +260,12 @@ class DataBinding:
         return None
 
     @staticmethod
-    def dict_binding(fields: dict, data: dict) -> Optional[dict]:
+    def dict_binding(fields: Dict[str, Field], data: dict) -> Optional[dict]:
         _data = {}
         for name, field in fields.items():
-            if isinstance(field, str) or field.lst is False:
-                value = data.get(field.data_key, None)
-            else:
-                value = data.get(field.data_key, None)
-                if isinstance(value, str):
-                    value = [value]
+            value = data.get(field.data_key, None)
+            if field.lst and isinstance(value, str):
+                value = [value]
             _data[name] = value
         return _data
 
