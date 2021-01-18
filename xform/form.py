@@ -60,18 +60,8 @@ class Form(FormABC, metaclass=FormMeta):
         print(datas)
     '''
 
-    def __init__(self, **kwargs: Any) -> None:
-        for key, val in kwargs.items():
-            if hasattr(self, key):
-                raise ValueError('Key already exist.')
-            setattr(self, key, val)
-
     def __getattr__(self, key: str):
-        try:
-            return self.__fields__[key]
-        except KeyError:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{key}'")
+        return self.__fields__[key]
 
     async def _bind(self,
                     data: dict,
@@ -185,14 +175,25 @@ class SubmitForm:
     '''
 
     def __init__(self, **kwargs: Any):
-        self.__fields__ = kwargs
+        self.__slots = frozenset(['_filter', 'bind'])
         self.__form__ = None
+        self.__fields__ = self._filter(kwargs)
+
+    def _filter(self, fields: dict) -> dict:
+        data = {}
+        for key, field in fields.items():
+            if isinstance(field, Field):
+                data[key] = field
+            elif key in self.__slots:
+                raise KeyError(f'{key} is already defined')
+            else:
+                setattr(self, key, field)
+        return data
 
     def __getattr__(self, key: str):
-        try:
-            return self.__fields__[key]
-        except KeyError:
-            raise AttributeError(f'SubmitForm object has no attribute {key}')
+        assert self.__form__, \
+            f'{self.__class__.__name__} form does not bind initialization'
+        return getattr(self.__form__, key)
 
     def bind(self,
              request: _REQUEST,
@@ -201,7 +202,3 @@ class SubmitForm:
             form = type('SubmitForm', (Form,), self.__fields__)
             self.__form__ = form()
         return self.__form__.bind(request, locations=locations)
-
-    def get_field_details(self) -> List[dict]:
-        assert self.__form__
-        return self.__form__.get_field_details()
