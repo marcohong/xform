@@ -34,6 +34,7 @@ def get_now_date() -> str:
 
 class MainHandler(tornado.web.RequestHandler):
     form = SubmitForm(
+        a='aa',
         id=fields.Integer(required=True, _min=2),
         text=fields.EnStr(data_key='search', required=False),
         test=fields.Boolean(required=False, default=True),
@@ -47,21 +48,15 @@ class MainHandler(tornado.web.RequestHandler):
 
     async def validate(self):
         data, error = await self.form.bind(self)
-        # print(self.form.get_field_details())
         if error:
-            ret = dict(code=0, state='FAIL', error=error)
-        else:
-            ret = dict(code=1, state='SUCCESS', data=data)
-        return ret
+            return self.write(json.dumps({'state': 'FAIL', 'error': error}))
+        return self.write(json.dumps({'state': 'SUCCESS', 'data': data}))
 
     async def post(self):
-        # locations: if used Schema, only support json data.
-        ret = await self.validate()
-        self.write(json.dumps(ret))
+        return await self.validate()
 
     async def get(self):
-        ret = await self.validate()
-        self.write(json.dumps(ret))
+        return await self.validate()
 
 
 def app():
@@ -70,6 +65,7 @@ def app():
     http_server = tornado.httpserver.HTTPServer(application)
     http_server.listen(options.port)
     print(f'Server running on http://localhost:{options.port}')
+    print('(Press CTRL+C to quit)')
     tornado.ioloop.IOLoop.current().start()
 
 
