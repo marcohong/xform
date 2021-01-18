@@ -64,7 +64,7 @@ class MainHandler(tornado.web.RequestHandler):
         '''
         data, error = await self.form.bind(self)
         if error:
-            return self.write(json.dumps({'state':'FAIL', 'error':error})
+            return self.write(json.dumps({'state':'FAIL', 'error':error}))
         return self.write(json.dumps({'state':'SUCCESS', 'data':data}))
 
     async def post(self):
