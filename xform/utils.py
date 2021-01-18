@@ -46,6 +46,11 @@ class AttrDict(dict):
         self[key] = value
 
 
+class FrozenDict(dict):
+    def __setitem__(self, key: Any, value: Any):
+        raise TypeError('Dictionary can not be modified')
+
+
 @attr.s(auto_attribs=True, frozen=True, slots=True)
 class ContentType:
     type: str
