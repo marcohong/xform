@@ -20,7 +20,7 @@
 ```bash
 pip3 install https://github.com/marcohong/xform/archive/v0.3.0.tar.gz
 # 或者使用最新版本
-pip3 install git+https://github.com/marcohong/tweb.git
+pip3 install git+https://github.com/marcohong/xform.git
 ```
 
 #### 使用示例
