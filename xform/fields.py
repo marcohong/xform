@@ -37,7 +37,7 @@ class Field(FieldABC):
                  length: Tuple[int, int] = None,
                  lst: bool = False,
                  validate: Any = None,
-                 err_msg: str = None,
+                 err_msg: dict = None,
                  when_field: str = None,
                  when_value: Any = None,
                  description: str = None,
