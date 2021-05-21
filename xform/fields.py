@@ -781,7 +781,7 @@ class Username(Str):
 
 
 class Password(Str):
-    regex = r'^([a-zA-Z0-9_!=$@.#*&~^]){%d,%d}$'
+    regex = r'^([a-zA-Z0-9_\-!=$@.#*&~^]){%d,%d}$'
     err_msg = {'invalid': ErrMsg.get_message('invalid_password')}
 
     def __init__(self,
