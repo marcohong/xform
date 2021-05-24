@@ -1,10 +1,15 @@
 from setuptools import setup
 
+with open('README.md', 'r') as f:
+    long_description = f.read()
+
 setup(
-    name='xform',
-    version='0.4.0',
-    description='Binding form data validation framework.',
+    name='xargs',
+    version='0.4.3',
     author='Maco',
+    description='Binding form data validation framework.',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     author_email='macohong@hotmail.com',
     zip_safe=False,
     license='MIT License',
