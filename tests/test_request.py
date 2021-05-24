@@ -1,6 +1,7 @@
 import asyncio
 import aiohttp
 import threading
+import time
 
 
 def run_thread():
@@ -26,18 +27,22 @@ def start_thread_loop(loop):
 
 async def process(num, session):
     url = (f'http://localhost:8888?id={num}&name=test{num}'
-           f'&status=1&user.uid={num}&user.name=user{num}')
+           f'&status=1&user.uid={num}&user.name=user{num}'
+           f'&user={num}')
     async with session.get(url) as resp:
         text = await resp.text('utf-8')
+        print(url)
         print(text)
 
 
 async def main():
+    start = time.time() * 1000000
     run_thread()
     session = aiohttp.ClientSession()
     tasks = [process(i, session) for i in range(2, 52)]
     await asyncio.gather(*tasks)
     await session.close()
+    print('done time:', (time.time() * 1000000 - start)/1000)
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
