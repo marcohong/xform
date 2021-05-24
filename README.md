@@ -19,6 +19,8 @@
 #### 获取安装
 
 ```bash
+# 已发布在pypi的地址
+pip3 install xargs
 pip3 install https://github.com/marcohong/xform/archive/v0.4.0.tar.gz
 # 或者使用最新版本
 pip3 install git+https://github.com/marcohong/xform.git
@@ -50,6 +52,9 @@ form = SubmitForm(
 @app.route('/', methods=['GET', 'POST'])
 async def index():
     # 注意表单之前获取过body数据可能会影响get_data取不到数据(因为缓冲区数据已被flask删除)
+    # locations:获取数据方式仅限于指定的作用域，locations可以是str或者tuple
+    # 作用域: form/json/query/headers/cookies，组合使用例如locations=('form','json')
+    # data, error = await self.form.bind(self, locations='json')
     data, error = await form.bind(request)
     if error:
         return {'error': error}
@@ -66,57 +71,27 @@ if __name__ == '__main__':
 Tornado示例，更多demo请查看examples文件夹
 
 ```python
-# Tornado >= 6.0.0
-import json
-import tornado.web
-import tornado.ioloop
-import tornado.options
-import tornado.httpserver
-from tornado.options import define, options
 from xform import fields
 from xform import schema
 from xform.form import SubmitForm
 
-define('port', default=8888, help='run on the given port', type=int)
-
+# 使用Schema可结合fields.Nested嵌套对象
 class UserSchema(schema.Schema):
     uid = fields.Integer(required=True)
     name = fields.Username(required=True, length=(4, 20))
 
-class MainHandler(tornado.web.RequestHandler):
-    # when_field 当表单某一个字段的值在when_value中定义 则强制变为必填(required=True)
-    # 如果表单提交类型的是json按照字典方式传值即可，否则使用user.uid=xxx方式传值
-    form = SubmitForm(
+form = SubmitForm(
         id=fields.Integer(required=True, _min=1),
         name=fields.Str(required=True),
+        # when_field 当表单某一个字段的值在when_value中定义 则强制变为必填(required=True)
+        password = fields.Password(required=False, when_field='id', when_value=lambda x: x and int(x) > 10)
+        # 如果表单提交类型的是json按照字典方式传值即可，否则使用user.uid=xxx方式传值
         user=fields.Nested(UserSchema, required=False)
-    )
-    
-    async def validate(self):
-        '''
-        locations:获取数据方式仅限于指定的作用域，locations可以是str或者tuple
-        作用域: form/json/query/headers/cookies，组合使用例如locations=('form','json')
-        data, error = await self.form.bind(self, locations='json')
-        '''
-        data, error = await self.form.bind(self)
-        if error:
-            return self.write(json.dumps({'state':'FAIL', 'error':error}))
-        return self.write(json.dumps({'state':'SUCCESS', 'data':data}))
+)
 
-    async def post(self):
-        # locations: if used Schema, only support json data.
-        return await self.validate()
-
-    async def get(self):
-        return await self.validate()
- 
-if __name__ == "__main__":
-    tornado.options.parse_command_line()
-    application = tornado.web.Application([(r'/', MainHandler)])
-    http_server = tornado.httpserver.HTTPServer(application)
-    http_server.listen(options.port)
-    tornado.ioloop.IOLoop.current().start()
-
+async def index():
+    data, error = await form.bind(self)
+  
 # curl http://localhost:8888 -X POST -d "id=1&name=test&user.name=user&user.uid=2"
 ```
 
@@ -188,6 +163,7 @@ class UserField(Integer):
                         value: VALUE_TYPES,
                         attr: str,
                         data: dict) -> Optional[dict]:
+        # 假设UserCache.get返回的是一个缓存对象
         data = await UserCache.get(value)
         # 错误时调用self.set_error('xxx')设置错误提示语，不需要返回内容，成功时返回内容
         if not data:
