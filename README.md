@@ -1,5 +1,5 @@
 #### xform
-表单数据绑定验证框架，支持Tornado(默认)、aiohttp、sanic，可自行扩展支持其它的python web框架
+表单数据绑定验证框架，支持Tornado(默认)、aiohttp、sanic、flask，可自行扩展支持其它的python web框架
 
 ------
 
@@ -14,11 +14,12 @@
 | Tornado >= 6.0.0 | python >= 3.6 |                                |
 | Aiohttp >= 3.6.0 | python >= 3.7 | aiohttp对python最低支持版本3.7 |
 | Sanic >= 19.3    | python >= 3.6 |                                |
+| Flask>=2.0.1     | python >= 3.6 |                                |
 
 #### 获取安装
 
 ```bash
-pip3 install https://github.com/marcohong/xform/archive/v0.3.0.tar.gz
+pip3 install https://github.com/marcohong/xform/archive/v0.4.0.tar.gz
 # 或者使用最新版本
 pip3 install git+https://github.com/marcohong/xform.git
 ```
@@ -27,7 +28,42 @@ pip3 install git+https://github.com/marcohong/xform.git
 
 ------
 
-Tornado示例，更多demo请查看tests文件夹
+Flask示例，只支持2.0以上
+
+```python
+from flask import request
+from flask import Flask
+from xform.httputil import HttpRequest
+from xform.adapters.flask import FlaskRequest #引入Flask的适配器
+from xform.form import SubmitForm
+from xform import fields
+HttpRequest.configure(request_proxy=FlaskRequest) # 全局设置Request的代理为FlaskRequest
+
+app = Flask(__name__)
+
+# 表单声明(也可以使用继承Form实现)
+form = SubmitForm(
+    id=fields.Integer(required=True, _min=1),
+    name=fields.Str(required=True, length=(3, 20))
+)
+
+@app.route('/', methods=['GET', 'POST'])
+async def index():
+    # 注意表单之前获取过body数据可能会影响get_data取不到数据(因为缓冲区数据已被flask删除)
+    data, error = await form.bind(request)
+    if error:
+        return {'error': error}
+    return {'data': data}
+
+if __name__ == '__main__':
+    app.run(port=8888)
+
+# curl -X POST http://127.0.0.1:8888/ -d '{"id": 12, "name": "hello1"}' -H "Content-type: application/json"
+# curl -X POST http://127.0.0.1:8888/ -d 'id=2&name=hello2'
+# curl http://127.0.0.1:8888/\?id\=12\&name\=hello3
+```
+
+Tornado示例，更多demo请查看examples文件夹
 
 ```python
 # Tornado >= 6.0.0
@@ -116,7 +152,7 @@ from xform import fields
 demo
 
 ```bash
-cd tests/
+cd examples/
 # test tornado
 python3 test_tornado.py
 # test aiohttp web
