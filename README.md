@@ -21,7 +21,7 @@
 ```bash
 # 已发布在pypi的地址
 pip3 install xargs
-pip3 install https://github.com/marcohong/xform/archive/v0.4.0.tar.gz
+pip3 install https://github.com/marcohong/xform/archive/v0.5.0.tar.gz
 # 或者使用最新版本
 pip3 install git+https://github.com/marcohong/xform.git
 ```
@@ -75,10 +75,11 @@ from xform import fields
 from xform import schema
 from xform.form import SubmitForm
 
-# 使用Schema可结合fields.Nested嵌套对象
+# 使用Schema可结合fields.Nested嵌套对象，支持多层嵌套对象
 class UserSchema(schema.Schema):
     uid = fields.Integer(required=True)
     name = fields.Username(required=True, length=(4, 20))
+    # group = fields.Nested(GroupSchema)
 
 form = SubmitForm(
         id=fields.Integer(required=True, _min=1),
