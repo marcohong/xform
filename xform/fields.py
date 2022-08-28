@@ -377,15 +377,19 @@ class Number(Field):
                     self.set_error('min_invalid', None, self._min)
                     return self.default
             if self._max is not None:
-                if self._compare_value(value, self._max):
+                if not self._compare_value(self._max, value, cmax=True):
                     self.set_error('max_invalid', None, self._max)
                     return self.default
             return value
 
-    def _compare_value(self, value: VALUE_TYPES, cval: Union[int,
-                                                             float]) -> bool:
-        _val = int(value) if value.isdigit() else float(value)
-        return _val >= cval
+    def _compare_value(self,
+                       value: VALUE_TYPES,
+                       cval: Union[int, float]) -> bool:
+        if not isinstance(value, (int, float)):
+            value = int(value) if value.isdigit() else float(value)
+        if not isinstance(cval, (int, float)):
+            cval = int(cval) if cval.isdigit() else float(cval)
+        return value >= cval
 
 
 class Integer(Number):
@@ -509,7 +513,7 @@ class List(Field):
     def __init__(self,
                  min_len: int = 1,
                  max_len: Union[None, int] = None,
-                 data_type: callable = None,
+                 data_type: callable = str,
                  length: Union[int, tuple] = None,
                  **kwargs: Any):
         kwargs.update({'lst': True, 'length': length})
