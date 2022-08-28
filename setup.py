@@ -5,7 +5,7 @@ with open('README.md', 'r') as f:
 
 setup(
     name='xargs',
-    version='0.4.3',
+    version='0.5.0',
     author='Maco',
     description='Binding form data validation framework.',
     long_description=long_description,
