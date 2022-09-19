@@ -253,7 +253,8 @@ class Field(FieldABC):
             else:
                 _flag = str(data.get(self.when_field)) == str(self.when_value)
             if _flag and self._value_is_null:
-                self.set_error('invalid')
+                self.set_error('required',
+                               ErrMsg.get_message('default_required'))
                 return self
         return await self._abc_validate(value, attr, data)
 
@@ -860,6 +861,9 @@ class Order(Str):
             key = item.split()[0]
             if key in _exist_key:
                 continue
+            if key not in self.columns:
+                self.set_error('invalid')
+                return
             _value.append(item.split())
             _exist_key[key] = True
 
