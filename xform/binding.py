@@ -52,6 +52,29 @@ class JsonContent(Content):
     def name(self) -> str:
         return 'json'
 
+    def _get_nested(self, nested: Nested, args: dict) -> Optional[dict]:
+        data = {}
+        if not args:
+            return data
+        for name, field in nested.schema.__fields__.items():
+            if isinstance(field, Nested):
+                return self._get_nested(field.data_key, field)
+            value = args.get(field.data_key)
+            data[name] = value
+        return data
+
+    def _binding(self, args: dict) -> Optional[dict]:
+        '''
+        :return: `<dict>` name:value
+        '''
+        data = {}
+        for name, field in self.fields.items():
+            if isinstance(field, Nested):
+                data[name] = self._get_nested(field, args.get(field.data_key))
+                continue
+            data[name] = args.get(field.data_key)
+        return data
+
     async def binding(self) -> Optional[dict]:
         '''
         :return: `<dict>` name:value
@@ -62,8 +85,8 @@ class JsonContent(Content):
                 value = await value
             data = json_loads(value)
         except (JsonDecodeError, ValueError):
-            data = None
-        return data
+            data = {}
+        return self._binding(data)
 
 
 class _KVContent(Content):
