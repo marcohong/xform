@@ -551,7 +551,7 @@ class IntList(List):
     def get_value(self):
         if self.is_valid:
             if not self.cvt_type:
-                return self.value
+                return self.value or self.default
             if isinstance(self.value, list):
                 data = [
                     int(i) for i in self.value
@@ -900,7 +900,7 @@ class IpAddr(Str):
             return value
 
 
-class Jsonify(Str):
+class Jsonify(Field):
     err_msg = {'invalid': ErrMsg.get_message('invalid_json')}
 
     def __init__(self, **kwargs: Any):
@@ -915,10 +915,13 @@ class Jsonify(Str):
     async def _validate(self, value: Union[str, dict], attr: str,
                         data: dict) -> Optional[dict]:
         try:
-            if isinstance(value, dict):
+            if isinstance(value, (list, dict)):
                 _data = value
-            else:
+            elif isinstance(value, str):
                 _data = json_loads(value)
+            else:
+                self.set_error('invalid')
+                return None
             assert isinstance(_data, (list, dict))
             return _data
         except (ValueError, AssertionError):
