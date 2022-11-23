@@ -378,7 +378,7 @@ class Number(Field):
                     self.set_error('min_invalid', None, self._min)
                     return self.default
             if self._max is not None:
-                if not self._compare_value(self._max, value, cmax=True):
+                if not self._compare_value(self._max, value):
                     self.set_error('max_invalid', None, self._max)
                     return self.default
             return value

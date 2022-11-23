@@ -1,5 +1,6 @@
 import types
 from typing import Any, Awaitable, List, Union
+from copy import deepcopy
 
 from . import FormABC
 from .fields import Field, Nested
@@ -36,9 +37,16 @@ class FormMeta(type):
                 if not fvalue.data_key:
                     fvalue.data_key = fname
 
+        parent_fields = {}
+        for base in bases:
+            if not hasattr(base, '__fields__'):
+                continue
+            parent_fields = deepcopy(base.__fields__)
+
         # delete attrs field
         for key, _ in fields.items():
             del attrs[key]
+        fields.update(parent_fields)
         attrs['__fields__'] = fields
         return super().__new__(cls, name, bases, attrs)
 

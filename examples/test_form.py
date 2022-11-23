@@ -28,11 +28,16 @@ class UserForm(Form):
     group = fields.Nested(GroupSchema, required=False)
 
 
+class ManagerForm(UserForm):
+    mid = fields.Integer(required=True, _min=1)
+
+
 class TestForm:
     @classmethod
     async def test_a(cls):
-        _form = UserForm()
+        _form = ManagerForm()
         data = {'id': 5,
+                'mid': 100,
                 'uname': 'tester',
                 'stime': '2020-01-01',
                 'etime': '2021-01-01',
