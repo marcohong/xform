@@ -30,6 +30,7 @@ class UserForm(Form):
 
 class ManagerForm(UserForm):
     mid = fields.Integer(required=True, _min=1)
+    roles = fields.Integer(required=True)
 
 
 class TestForm:

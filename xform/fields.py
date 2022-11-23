@@ -367,6 +367,9 @@ class Number(Field):
                         data: dict) -> Optional[int]:
         if isinstance(value, bool):
             return self.default
+        if isinstance(value, (dict, list)):
+            self.set_error('invalid')
+            return
         if isinstance(value, (int, float)):
             value = f'{value}'
         ret = re.match(self.regex, value)

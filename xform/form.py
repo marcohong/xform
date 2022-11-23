@@ -46,7 +46,8 @@ class FormMeta(type):
         # delete attrs field
         for key, _ in fields.items():
             del attrs[key]
-        fields.update(parent_fields)
+        if parent_fields:
+            fields = {**parent_fields, **fields}
         attrs['__fields__'] = fields
         return super().__new__(cls, name, bases, attrs)
 
